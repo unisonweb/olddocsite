@@ -5,7 +5,7 @@ This short guide will have you downloading Unison, running your first program (a
 If you have any trouble with the process or ideas about how to improve this document, [come talk to us in Slack][slack]! Also this document is [on GitHub][on-github].
 
 
-[slack]: https://unisonlanguage.slack.com
+[slack]: https://join.slack.com/t/unisonlanguage/shared_invite/enQtNzAyMTQ4ODA0MDM4LWYxZTNkMGUxMDEzNTg3NTMxNjMxOGM2Zjg4ODFjM2RhNGY0OGU2NTMzYmQ1YWIwN2Y0YTc1NjQ1NjgzYzEzOWI
 [mac-dl]: https://www.dropbox.com/s/6vl246m4faaps5k/unison?dl=0
 [linux-dl]: todo
 [windows-dl]: todo

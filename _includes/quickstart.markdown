@@ -1,6 +1,3 @@
----
----
-
 # 3 minute quickstart guide
 
 This short guide will have you downloading Unison, running your first program (a toy distributed mergesort implementation), and publishing your first definition. The focus here is on getting you up and running as quickly as possible. 🏎 More in-depth guides follow this one.

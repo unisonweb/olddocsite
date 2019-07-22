@@ -6,7 +6,7 @@ If you have any trouble with the process or ideas about how to improve this docu
 
 
 [slack]: todo
-[mac-dl]: todo
+[mac-dl]: https://www.dropbox.com/s/6vl246m4faaps5k/unison?dl=0
 [linux-dl]: todo
 [windows-dl]: todo
 [on-github]: todo

@@ -24,7 +24,13 @@ Create a new directory, `unisoncode` (or any name you choose), then run the `uni
 
 ### Step 3: Fetch and run a distributed mergesort example
 
-At the Unison `.>` prompt, do `pull git@github.com:unisonweb/unisonbase.git` to fetch a base library with the example you'll be running. You'll see some output from `git` in the background, and once that's done you can do `edit quickstart.dsort` to add the `dsort` distributed mergesort function to the top of a newly created _scratch file_, `scratch.u`:
+At the Unison `.>` prompt, do:
+
+```
+.> pull git@github.com:unisonweb/unisonbase.git
+``` 
+
+to fetch a base library with the example you'll be running. You'll see some output from `git` in the background, and once that's done you can do `edit quickstart.dsort` to add the `dsort` distributed mergesort function to the top of a newly created _scratch file_, `scratch.u`:
 
 <script id="asciicast-o9lfrfetnmUT4ArqdDFMXZkr9" src="https://asciinema.org/a/o9lfrfetnmUT4ArqdDFMXZkr9.js" data-speed="2" data-rows="30" data-cols="65" async></script>
 

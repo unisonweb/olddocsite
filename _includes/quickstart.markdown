@@ -46,7 +46,7 @@ Let's try publishing some code. First, fork the Unison base library, using the b
 
 Then add the following to the top of your `scratch.u` file and save:
 
-``` Haskell
+```haskell
 firstlibrary.frobnicate x = x * 2
 
 --- include this too, it's called "the fold"

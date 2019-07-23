@@ -74,7 +74,7 @@ This is important: Unison __isn't__ doing a bunch of text munging on your behalf
 
 So rename and move things around as much as you want, don't worry about picking the perfect name at first!
 
-> ☝️ Using `alias.term` instead of `move.term` would introduce a new name that resolves to the same definition, without removing the old name.
+> _☝️_  Using `alias.term` instead of `move.term` would introduce a new name that resolves to the same definition, without removing the old name.
 
 Okie dokie, let's go ahead and try out this `reverse` function and learn more about Unison's interactive way of writing and editing code:
 
@@ -433,4 +433,5 @@ Your code is now live on the internet! Others can get your definitions of `halve
 
 ## What next?
 TODO: Where do we direct readers next after this?
+
 

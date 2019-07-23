@@ -381,7 +381,8 @@ header ul a strong{
 section{
     width:500px;
     float:left;
-    padding-bottom:50px
+    padding-bottom:50px;
+    padding-top:200px;
 }
 small{
     font-size:11px

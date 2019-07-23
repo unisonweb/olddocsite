@@ -1,24 +1,102 @@
-# Getting Started with Unison
-## Download and Install Unison
-TBD
+# A tour of Unison
 
-## Create Your Unison Codebase
-Now that you have Unison installed, the first thing to do is to create a Unison codebase, which is where your Unison code is going to live.
+This guide assumes you've already gone through the steps in [the quickstart guide](quickstart.html). We recommend going through that guide before continuing along here.
 
-Create an empty directory in a convenient location on your disk. Call this directory whatever you want. For example, you could call it `UnisonCodebase`:
+The source for this document is [on GitHub][on-github].
 
-**Command Line**
-```bash
-$ mkdir UnisonCodebase
-$ cd UnisonCodebase
+[repoformat]: todo
+[on-github]: todo
+
+### The Unison codebase manager
+
+When first launching Unison in a new directory, we get a message like:
+
+```
+No codebase exists here so I'm initializing one in:
+.unison/v1
 ```
 
-Now start up Unison by issuing the `unison`  command.
+What's happening here? This is the Unison _codebase manager_ starting up and initializing a fresh codebase. We're used to thinking about our codebase as a bag of text files that's mutated as we make changes to our code, but in Unison the codebase is represented as a collection of serialized syntax trees, indexed by a hash of their content and stored in a collection of files in that `.unison/v1` directory.
+
+The Unison codebase format has a few key properties:
+
+* It is _append-only_: once a file in the `.unison` directory is created, it is never modified, and files are always named uniquely and deterministically based on their content.
+* As a result, a Unison codebase can be versioned and sync'd with Git or any similar tool and will never generate a merge conflict. In the quickstart guide, the `pull git@github.com:unisonweb/unisonbase.git` used git behind the scenes to sync new definitions from the remote Unison codebase.
+
+Also as a result of these properties, we can cache all sorts of interesting information about definitions in the codebase and _never need to worry about cache invalidation_. For instance, Unison is a statically typed language, we know the type of all definitions added to the codebase, and there's an index that lets us query for definitions by their type. Try out the following commands:
+
+__unison__
+```
+.> find : [a] -> [a]
+
+  1. base.Heap.sort : [a] -> [a]
+  2. base.List.distinct : [a] -> [a]
+  3. base.List.reverse : [a] -> [a]
+  4. base.Heap.sortDescending : [a] -> [a]
+
+
+.> view 3
+
+  base.List.reverse : [a] -> [a]
+  base.List.reverse as =
+    use base.List +:
+    base.List.foldl (acc a -> a +: acc) [] as
+```
+
+Here, we did a type-based search for functions of type `[a] -> [a]`, got a list of results, and then used the `view` command to look at the nicely formatted source code of one of these results. We'll introduce more Unison syntax later, but a couple things:
+
+* `base.List.reverse : [a] -> [a]` is the syntax for giving a type signature to a definition. We sometimes pronounce the `:` symbol as "has type", as in "reverse has the type `[a] -> [a]`".
+* `[Nat]` is the syntax for the type which is lists of natural numbers (terms like `[0,1,2]` and `[3,4,5]`, and `[]` will have this type), and more generally `[Foo]` is the type of lists whose elements have type `Foo`.
+* Any lowercase variable in a type signature is assumed to be _universally quantified_, so `[a] -> [a]` really means and could be written `forall a . [a] -> [a]`, which is the type of functions that take a list whose elements are any type, and return a list of elements of that same type.
+
+### Names are separate metadata and renaming is fast and 100% accurate
+
+The Unison codebase, in its definititon for `reverse`, doesn't store the names for the definitions it depends on. All definitions in Unison are given a unique, content-based hash, and references to dependencies use this hash. As a result, we can change the name(s) associated with a definition easily.
+
+`reverse` is defined using `List.foldl`. Down with pointless abbreviations! Let's rename that to `List.foldLeft`. Try this out (you can use tab completion if you like):
+
+```
+.> move.term base.List.foldl base.List.foldLeft
+
+  Done.
+
+.> view base.List.reverse
+
+  base.List.reverse : [a] -> [a]
+  base.List.reverse as =
+    use base.List +:
+    base.List.foldLeft (acc a -> a +: acc) [] as
+```
+
+What's happening here? Notice that `view` shows the `foldLeft` name now, so the rename has taken effect. Nice! To make this happen Unison just changed the name associated with the hash of `foldl` _in one place_. The `view` command just looks up the names for the hashes on the fly, right when it's printing out the code.
+
+This is important: Unison __isn't__ doing a bunch of text munging on your behalf, updating possibly thousands of files, generating a huge textual diff, and also breaking a bunch of downstream library users that are still expecting that definition to be called the old name.
+
+So rename and move things around as much as you want, don't worry about picking the perfect name at first!
+
+> ☝️ Using `alias.term` instead of `move.term` would introduce a new name that resolves to the same definition, without removing the old name.
+
+Okie dokie, let's go ahead and try out this `reverse` function and learn more about Unison's interactive way of writing and editing code:
+
+### Unison scratch files are like spreadsheets, and replace
+
+TODO
+
+When we fetched the Unison base library using
+
+_Aside:_ If you're curious, you can check out the [v1 codebase format specification][repoformat].
+
+We can aggressively cache or index the
+
+is a structured collection of files
 
 **unison**
 ```
 $ unison
-☝️  No codebase exists here so I'm initializing one in: .unison/v0
+  ☝️
+
+  No codebase exists here so I'm initializing one in:
+  .unison/v1
 
    _____     _
   |  |  |___|_|___ ___ ___
@@ -28,22 +106,23 @@ $ unison
   Welcome to Unison!
 
   I'm currently watching for changes to .u files under
-  ~/UnisonCodebase
+  ~/unisoncode
 
   Type help to get help. 😎
 
 .>
 ```
 
-
 Unison is now waiting for your input in two different ways:
-1. It’s listening for changes to files with the `.u` extension, anywhere under the `UnisonCodebase` directory (including any subdirectories).
-2. It’s waiting for you to give a command at the prompt.
+1. It’s listening for changes to files with the `.u` extension, anywhere under the `unisoncode` directory (including any subdirectories).
+2. It’s waiting for you to give a command at the `.>` prompt.
 
-The first thing Unison did was create a codebase in `UnisonCodebase/.unison`. This already has a number of functions and data types in it to get you started.
+The first thing Unison did was create a codebase in `unisoncode/.unison`.
+
+This already has a number of functions and data types in it to get you started.
 
 ## Evaluate Unison Expressions
-While keeping Unison running in the terminal, open up a file called e.g. `UnisonCodebase/scratch.u`. Any file ending with `.u`  under the directory Unison says it’s watching will do.
+While keeping Unison running in the terminal, open up a file called e.g. `unisoncode/scratch.u`. Any file ending with `.u`  under the directory Unison says it’s watching will do.
 
 Instead of typing Unison expressions at the prompt like in a traditional read-eval-print loop, you can ask Unison to evaluate expressions just by putting them in your `.u` file. If you begin a line with `>`, Unison will evaluate the rest of that line and print the result. For example, if you add this to `scratch.u` and save it:
 
@@ -62,7 +141,7 @@ Unison comes back with:
 
 **unison**
 ```
-  ✅ ~/UnisonCodebase/scratch.u changed.
+  ✅ ~/unisoncode/scratch.u changed.
 
   Now evaluating any watch expressions (lines starting with
   `>`)...
@@ -115,8 +194,8 @@ When you save the file, Unison replies:
 
 **unison**
 ```
-  ✅ I found and typechecked these definitions in 
-  ~/UnisonCodebase/scratch.u:
+  ✅ I found and typechecked these definitions in
+  ~/unisoncode/scratch.u:
 
        Legend:
     +  a new definition with a new name
@@ -144,7 +223,7 @@ And Unison replies:
           94
 ```
 
-We can add a test for this function. 
+We can add a test for this function.
 
 **scratch.u**
 ```
@@ -354,3 +433,4 @@ Your code is now live on the internet! Others can get your definitions of `halve
 
 ## What next?
 TODO: Where do we direct readers next after this?
+

@@ -10,9 +10,12 @@
     <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="Unison documentation" />
     <link rel="stylesheet" href="/docsite/assets/css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/pyloncss@latest/css/pylon.css"/>
   </head>
   <body>
-    <header>{% include header.html %}</header>
-    <section>{{content}}</section>
+    <vstack stretch align-x=left align-y=center spacing=m>
+      <header>{% include header.html %}</header>    
+      <section>{{content}}</section>
+    </vstack>
   </body>
 </html>

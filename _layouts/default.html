@@ -13,8 +13,15 @@
     <link rel="stylesheet" href="https://unpkg.com/pyloncss@latest/css/pylon.css"/>
   </head>
   <body>
-    <vstack stretch align-x=left align-y=center spacing=m>
-      <header>{% include header.html %}</header>    
+    <vstack stretch align-x=left align-y=center spacing=xl>
+      <header>
+        <list stretch align-x=left align-y=center spacing=m>
+          <h1><a href="/">Unison documentation</a></h1>
+          <a href="quickstart.html">Install and quickstart guide</a>
+          <a href="gettingstarted.html">Getting started guide</a>
+          <a href="languagereference.html">Language reference</a>
+        </list>
+      </header>
       <section>{{content}}</section>
     </vstack>
   </body>

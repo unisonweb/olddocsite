@@ -7,25 +7,23 @@ The source for this document is [on GitHub][on-github]. Feedback and improvement
 [repoformat]: todo
 [on-github]: todo
 [roadmap]: todo
+[quickstart]: quickstart.html
 
 ### 🧠 The big idea
 
-If there is one motivating idea behind Unison, it's this: the tools for making software should be _thoughtfully crafted_ in all aspects, with the goal of making the developer experience simpler, easier, more delightful, and getting us closer to that exhilerating creative essence of programming, the stuff made us all want to learn this amazing subject in the first place! Or if we can't have that, at the very least, let's have programming be _reasonable_ and not insane or arcane. "Well, it was done this way in the 70s and no one's really bothered to really revisit it" is not a good reason for continuing to do something that makes programming worse.
+If there is one motivating idea behind Unison, it's this: the tools for making software should be _thoughtfully crafted_ in all aspects, with the goal of making the developer experience simpler, more fun, and getting us closer to that exhilerating creative essence of programming and the things that made us want to learn programming in the first place! Or at the very least, if we can't have that, let's have programming be _reasonable_ and not needlessly arcane. "Well, it was done this way in the 70s and no one's really bothered to really revisit it" is not a good reason for continuing to do something that makes programming worse.
 
-This is the philosphy behind Unison and we take it wherever it leads us! Who's with us??
+> 🧐 That said, boiling the ocean can take a long time. It's sensible to make decisions about when and where to innovate and not try to innovate All The Things right now. But let's be honest that this is what we're doing... and not forget to keep making things better later!
 
-> 🧐 Okay, but boiling the ocean can take a long time. It's sensible to make decisions about when and where to innovate and not try to innovate All The Things right now. But let's be honest that this is what we're doing... and not forget to keep making things better later!
-
-Okay, but if there is one big _technical_ idea behind Unison, explored in pursuit of our overall goals, it's this: __Unison definitions are identified by content.__ Each definition is some syntax tree, hashed in a way that incorporates the hashes of all the dependencies of that definition and which is independent of the names of these definitions. A Unison hash uniquely identifies a Unison definition. This is the basis for some serious improvements to the programmer experience: it eliminates builds and eliminates dependency conflicts, allows for easy dynamic deployment of code, typed durable storage, and lots more.
+Okay, but if there is one big _technical_ idea behind Unison, explored in pursuit of our overall goals, it's this: __Unison definitions are identified by content.__ Each definition is some syntax tree, hashed in a way that incorporates the hashes of all the dependencies of that definition and which is independent of the names of these definitions. A Unison hash uniquely identifies a Unison definition. This is the basis for some serious improvements to the programmer experience: it eliminates builds and most dependency conflicts, allows for easy dynamic deployment of code, typed durable storage, and lots more.
 
 But this one technical idea is also a bit weird. The implications of it are weird! Consider this: if definitions are identified by their content, there's no such thing as changing a definition, there's only introducing new definitions. What can change is how we map definitions to human-friendly names. e.g. `x -> x + 1` (a definition) vs `Int.increment` (a name we associate with it for the purposes of writing and reading other code that references it). An analogy: Unison definitions are like stars in the sky. We can discover new stars and create new star maps that pick different names for the stars, but the stars exist independently of what we choose to call them.
 
 But the longer you spend with this weird idea, the more the niceness of it starts to take hold of you. You start seeing it everywhere: "wow, this would be so much easier with the Unison approach". And you start wanting to see the implications of it worked out in detail...
 
-It does raise lots of questions, too: for one, how do you actually edit and refactor code deep down in the dependency graph of your code in this new world without it being unbelievably tedious? Is the codebase still just a mutable bag of text files, or do we need something else?
+It does raise lots of questions, though: like even if definitions themselves are unchanging, we certainly may change which definitions we are interested in and give nice names to. How does that work? How do I refactor or upgrade code? Is the codebase still just a mutable bag of text files, or do we need something else?
 
 We __do__ need something else to make working with content-addressed code nice. In Unison we call this something else the _Unison codebase manager_.
-
 
 ### 👋 to the Unison codebase manager
 
@@ -43,7 +41,7 @@ The Unison codebase format has a few key properties:
 * It is _append-only_: once a file in the `.unison` directory is created, it is never modified, and files are always named uniquely and deterministically based on their content.
 * As a result, a Unison codebase can be versioned and sync'd with Git or any similar tool and will never generate a conflict in those tools. (Though diverging concurrent edits are still a fact of life, they don't show up as a Git conflict and are surfaced by Unison via a separate `todo` command in the codebase manager.)
 
-> 🐘 Remember that `pull git@github.com:unisonweb/unisonbase.git` we used in the [quickstart guide][quickstart]? That used git behind the scenes to sync new definitions from the remote Unison codebase to the local codebase.
+> 🐘 Remember that `pull git@github.com:unisonweb/unisonbase.git` we used in the [quickstart guide][quickstart]. That used git behind the scenes to sync new definitions from the remote Unison codebase to the local codebase.
 
 Because of the append-only nature of the codebase format, we can cache all sorts of interesting information about definitions in the codebase and _never have to worry about cache invalidation_. For instance, Unison is a statically typed language and we know the type of all definitions added to the codebase (the codebase is always in a well-typed state). So one thing that's useful and easy to maintain is an index that lets us query for definitions in the codebase by their type. Try out the following commands:
 

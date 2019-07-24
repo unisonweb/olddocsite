@@ -2,12 +2,32 @@
 
 This guide assumes you've already gone through the steps in [the quickstart guide](quickstart.html). We recommend going through that guide before continuing along here.
 
-The source for this document is [on GitHub][on-github].
+The source for this document is [on GitHub][on-github]. Feedback and improvements are most welcome!
 
 [repoformat]: todo
 [on-github]: todo
+[roadmap]: todo
 
-### The Unison codebase manager
+### 🧠 The big idea
+
+If there is one motivating idea behind Unison, it's this: the tools for making software should be _thoughtfully crafted_ in all aspects, with the goal of making the developer experience simpler, easier, more delightful, and getting us closer to that exhilerating creative essence of programming, the stuff made us all want to learn this amazing subject in the first place! Or if we can't have that, at the very least, let's have programming be _reasonable_ and not insane or arcane. "Well, it was done this way in the 70s and no one's really bothered to really revisit it" is not a good reason for continuing to do something that makes programming worse.
+
+This is the philosphy behind Unison and we take it wherever it leads us! Who's with us??
+
+> 🧐 Okay, but boiling the ocean can take a long time. It's sensible to make decisions about when and where to innovate and not try to innovate All The Things right now. But let's be honest that this is what we're doing... and not forget to keep making things better later!
+
+Okay, but if there is one big _technical_ idea behind Unison, explored in pursuit of our overall goals, it's this: __Unison definitions are identified by content.__ Each definition is some syntax tree, hashed in a way that incorporates the hashes of all the dependencies of that definition and which is independent of the names of these definitions. A Unison hash uniquely identifies a Unison definition. This is the basis for some serious improvements to the programmer experience: it eliminates builds and eliminates dependency conflicts, allows for easy dynamic deployment of code, typed durable storage, and lots more.
+
+But this one technical idea is also a bit weird. The implications of it are weird! Consider this: if definitions are identified by their content, there's no such thing as changing a definition, there's only introducing new definitions. What can change is how we map definitions to human-friendly names. e.g. `x -> x + 1` (a definition) vs `Int.increment` (a name we associate with it for the purposes of writing and reading other code that references it). An analogy: Unison definitions are like stars in the sky. We can discover new stars and create new star maps that pick different names for the stars, but the stars exist independently of what we choose to call them.
+
+But the longer you spend with this weird idea, the more the niceness of it starts to take hold of you. You start seeing it everywhere: "wow, this would be so much easier with the Unison approach". And you start wanting to see the implications of it worked out in detail...
+
+It does raise lots of questions, too: for one, how do you actually edit and refactor code deep down in the dependency graph of your code in this new world without it being unbelievably tedious? Is the codebase still just a mutable bag of text files, or do we need something else?
+
+We __do__ need something else to make working with content-addressed code nice. In Unison we call this something else the _Unison codebase manager_.
+
+
+### 👋 to the Unison codebase manager
 
 When first launching Unison in a new directory, we get a message like:
 
@@ -16,14 +36,16 @@ No codebase exists here so I'm initializing one in:
 .unison/v1
 ```
 
-What's happening here? This is the Unison _codebase manager_ starting up and initializing a fresh codebase. We're used to thinking about our codebase as a bag of text files that's mutated as we make changes to our code, but in Unison the codebase is represented as a collection of serialized syntax trees, indexed by a hash of their content and stored in a collection of files in that `.unison/v1` directory.
+What's happening here? This is the Unison _codebase manager_ starting up and initializing a fresh codebase. We're used to thinking about our codebase as a bag of text files that's mutated as we make changes to our code, but in Unison the codebase is represented as a collection of serialized syntax trees, identified by a hash of their content and stored in a collection of files in that `.unison/v1` directory.
 
 The Unison codebase format has a few key properties:
 
 * It is _append-only_: once a file in the `.unison` directory is created, it is never modified, and files are always named uniquely and deterministically based on their content.
-* As a result, a Unison codebase can be versioned and sync'd with Git or any similar tool and will never generate a merge conflict. In the quickstart guide, the `pull git@github.com:unisonweb/unisonbase.git` used git behind the scenes to sync new definitions from the remote Unison codebase.
+* As a result, a Unison codebase can be versioned and sync'd with Git or any similar tool and will never generate a conflict in those tools. (Though diverging concurrent edits are still a fact of life, they don't show up as a Git conflict and are surfaced by Unison via a separate `todo` command in the codebase manager.)
 
-Also as a result of these properties, we can cache all sorts of interesting information about definitions in the codebase and _never need to worry about cache invalidation_. For instance, Unison is a statically typed language, we know the type of all definitions added to the codebase, and there's an index that lets us query for definitions by their type. Try out the following commands:
+> 🐘 Remember that `pull git@github.com:unisonweb/unisonbase.git` we used in the [quickstart guide][quickstart]? That used git behind the scenes to sync new definitions from the remote Unison codebase to the local codebase.
+
+Because of the append-only nature of the codebase format, we can cache all sorts of interesting information about definitions in the codebase and _never have to worry about cache invalidation_. For instance, Unison is a statically typed language and we know the type of all definitions added to the codebase (the codebase is always in a well-typed state). So one thing that's useful and easy to maintain is an index that lets us query for definitions in the codebase by their type. Try out the following commands:
 
 __unison__
 ```
@@ -33,7 +55,6 @@ __unison__
   2. base.List.distinct : [a] -> [a]
   3. base.List.reverse : [a] -> [a]
   4. base.Heap.sortDescending : [a] -> [a]
-
 
 .> view 3
 
@@ -49,11 +70,11 @@ Here, we did a type-based search for functions of type `[a] -> [a]`, got a list 
 * `[Nat]` is the syntax for the type which is lists of natural numbers (terms like `[0,1,2]` and `[3,4,5]`, and `[]` will have this type), and more generally `[Foo]` is the type of lists whose elements have type `Foo`.
 * Any lowercase variable in a type signature is assumed to be _universally quantified_, so `[a] -> [a]` really means and could be written `forall a . [a] -> [a]`, which is the type of functions that take a list whose elements are any type, and return a list of elements of that same type.
 
-### Names are separate metadata and renaming is fast and 100% accurate
+### Names are stored separately from definitions so renaming is fast and 100% accurate
 
-The Unison codebase, in its definititon for `reverse`, doesn't store the names for the definitions it depends on. All definitions in Unison are given a unique, content-based hash, and references to dependencies use this hash. As a result, we can change the name(s) associated with a definition easily.
+The Unison codebase, in its definititon for `reverse`, doesn't store the names for the definitions it depends on (like the `foldl` function). All definitions in Unison are given a unique, content-based hash, and references to dependencies use this hash. As a result, changing the name(s) associated with a definition is easy as pie.
 
-`reverse` is defined using `List.foldl`. Down with pointless abbreviations! Let's rename that to `List.foldLeft`. Try this out (you can use tab completion if you like):
+Let's try this out. `reverse` is defined using `List.foldl`. Geez, "foldl", what the heck is that?? Down with pointless abbreviations! Let's rename that to `List.foldLeft`. Try out the following command (you can use tab completion here to help if you like):
 
 ```
 .> move.term base.List.foldl base.List.foldLeft
@@ -68,119 +89,141 @@ The Unison codebase, in its definititon for `reverse`, doesn't store the names f
     base.List.foldLeft (acc a -> a +: acc) [] as
 ```
 
-What's happening here? Notice that `view` shows the `foldLeft` name now, so the rename has taken effect. Nice! To make this happen Unison just changed the name associated with the hash of `foldl` _in one place_. The `view` command just looks up the names for the hashes on the fly, right when it's printing out the code.
+What's happening here? Notice that `view` shows the `foldLeft` name now, so the rename has taken effect. Nice!
 
-This is important: Unison __isn't__ doing a bunch of text munging on your behalf, updating possibly thousands of files, generating a huge textual diff, and also breaking a bunch of downstream library users that are still expecting that definition to be called the old name.
+To make this happen Unison just changed the name associated with the hash of `foldl` _in one place_. The `view` command just looks up the names for the hashes on the fly, right when it's printing out the code.
 
-So rename and move things around as much as you want, don't worry about picking the perfect name at first!
+This is important: Unison __isn't__ doing a bunch of text munging on your behalf, updating possibly thousands of files (sounds hard!), generating a huge textual diff, and also breaking a bunch of downstream library users of yours that are still expecting that definition to be called the old name. That would be crazy, right?
 
-> _☝️_  Using `alias.term` instead of `move.term` would introduce a new name that resolves to the same definition, without removing the old name.
+So rename and move things around as much as you want. Don't worry about picking the perfect name at first. Give the same definition multiple names if you want, it's all good!
+
+> ☝️ Using `alias.term` instead of `move.term` introduces a new name for a definition without removing the old name(s).
+
+> 🤓 If you're curious to learn about the guts of the Unison codebase format, you can check out the [v1 codebase format specification][repoformat].
 
 Okie dokie, let's go ahead and try out this `reverse` function and learn more about Unison's interactive way of writing and editing code:
 
-### Unison scratch files are like spreadsheets, and replace
+### Unison scratch files are like spreadsheets and replace the usual read-eval-print-loop (REPL)
 
-TODO
+The codebase manager lets you make changes to your codebase and explore the definitions it contains, but it also listens for changes to any file ending in `.u` in the current directory (including any subdirectories). When any such file is saved, it parses and typechecks that file and runs any _watch expressions_, which are lines starting with `>`. Let's try this out.
 
-When we fetched the Unison base library using
-
-_Aside:_ If you're curious, you can check out the [v1 codebase format specification][repoformat].
-
-We can aggressively cache or index the
-
-is a structured collection of files
-
-**unison**
-```
-$ unison
-  ☝️
-
-  No codebase exists here so I'm initializing one in:
-  .unison/v1
-
-   _____     _
-  |  |  |___|_|___ ___ ___
-  |  |  |   | |_ -| . |   |
-  |_____|_|_|_|___|___|_|_|
-
-  Welcome to Unison!
-
-  I'm currently watching for changes to .u files under
-  ~/unisoncode
-
-  Type help to get help. 😎
-
-.>
-```
-
-Unison is now waiting for your input in two different ways:
-1. It’s listening for changes to files with the `.u` extension, anywhere under the `unisoncode` directory (including any subdirectories).
-2. It’s waiting for you to give a command at the `.>` prompt.
-
-The first thing Unison did was create a codebase in `unisoncode/.unison`.
-
-This already has a number of functions and data types in it to get you started.
-
-## Evaluate Unison Expressions
-While keeping Unison running in the terminal, open up a file called e.g. `unisoncode/scratch.u`. Any file ending with `.u`  under the directory Unison says it’s watching will do.
-
-Instead of typing Unison expressions at the prompt like in a traditional read-eval-print loop, you can ask Unison to evaluate expressions just by putting them in your `.u` file. If you begin a line with `>`, Unison will evaluate the rest of that line and print the result. For example, if you add this to `scratch.u` and save it:
+Keep your `unison` terminal running and open up a file, `scratch.u` (or `frobnicate.u`, or whatever you like) in your preferred editor, and add a few watch expressions:
 
 **scratch.u**
 ```
+-- A comment, ignored by Unison
+
+use base.List -- wildcard import
+-- use base.List reverse size foldLeft -- specific imports
+
+> reverse [1,2,3,4]
 > 4 + 6
-
-> 4 - 5
-
 > 5.0 / 2.0
-
 > not true
 ```
 
-Unison comes back with:
+When you save the file, the codebase manager notices and responds:
 
 **unison**
 ```
-  ✅ ~/unisoncode/scratch.u changed.
+  ✅
+
+  ~/unisoncode/scratch.u changed.
 
   Now evaluating any watch expressions (lines starting with
-  `>`)...
+  `>`)... Ctrl+C cancels.
 
-    1 | > 4 + 5
+    6 | > reverse [1,2,3,4]
           ⧩
-          9
+          [4, 3, 2, 1]
 
-    3 | > 4 - 5
+    7 | > 4 + 6
           ⧩
-          -1
+          10
 
-    5 | > 5.0 / 2.0
+    8 | > 5.0 / 2.0
           ⧩
           2.5
 
-    7 | > not true
+    9 | > not true
           ⧩
           false
 ```
 
 Great! Unison evaluates all the expressions at once and prints out the results. The numbers on the left are the line numbers from the `scratch.u` file.
 
-Now put a line at the top of your file with just three dashes in it.
+Unison uses this basic workflow instead of having a separate read-eval-print-loop (REPL): the code you are editing can be run interactively, right in the same spot as you are doing the editing, with a full text editor at your disposal and without needing to switch to a separate tool.
 
+This is nice, but do we really want to reevaluate all these expressions on every file save? What if they're expensive? Luckily, Unison keeps a cache of results for expressions it evaluates, keyed by the hash of the expression (you can clear this cache at any time without ill-effects). If it has a result for a hash, it returns that instead of evaluating the expresion again. So you can think of and use your Unison `.u` scratch files a bit like spreadsheets, which only recompute the minimal amount when dependencies change!
+
+> 🤓 There's one more ingredient that makes this work  effectively, and that's functional programming. When an expression has no side effects, its result is deterministic and you can cache it as long as you've got a good key to use for the cache, like the Unison content-based hash. Unison's type system won't let you do I/O inside one of these watch expressions or anything else that would make the result change from one evaluation to the next.
+
+> 😤 How many times have you started doing some exploration in a REPL only to become irritated as you realize "geez, I shoulda just put this in a file". No more!
+
+### Taking detours while working on a scratch file
+
+Sometimes while in the middle of writing some code, your scratch file is in a broken state of things being half implemented, and you realize you want to switch contexts and try something else out or maybe tinker with a function you're thinking of using. Imagine you're write a big complicated function, called `transmogrify`. It's half done, with a bunch of syntax and/or type errors and things to fill in, but you realize you could use a function for generating the list `[0,1,2..n]`. First you might try out a type-based search:
+
+```
+.> find : [base.Nat]
+
+  ☝️
+
+  I couldn't find exact type matches, resorting to fuzzy
+  matching...
+
+
+  1. base.Bytes.fromList : [base.Nat] -> base.Bytes
+  2. base.Bytes.toList : base.Bytes -> [base.Nat]
+  3. base.List.range : base.Nat -> base.Nat -> [base.Nat]
+```
+
+> 🧪 It would be nice if you could specify some "default imports" to the codebase manager to avoid seeing these fully qualified names everywhere. That's not implemented yet unfortunately.
+
+> 🏗 We are working on making documentation also available from within the `find` and `view` commands.
+
+The search does fuzzy type matching if it can't find an exact match. `List.range` sounds promising, it takes two numbers and returns a `[Nat]`. Let's try it out. First, put a line at the top of your file with just three dashes in it:
+
+**scratch.u**
 ```
 ---
-> 4 + 6
+use base.List
 
-> 4 - 5
-
-> 5.0 / 2.0
-
-> not true
+transmogrify f abracadabra x = ...
 ```
 
-If you save that, Unison will say that it loaded the file but didn’t find anything. The `---` line is called “the fold“, and it can be a convenient tool for working with Unison scratch files. Everything below the fold is ignored by Unison, but all the stuff you typed is still there in case you need it.
+If you save that, Unison will say that it loaded the file but didn’t find anything. The `---` line is called "the fold", and it can be a convenient tool for working with Unison scratch files. Everything below the fold is ignored by Unison, but all the stuff you typed is still there in case you need it. We can test out the `range` function by putting a watch expression above the fold:
 
-## Your First Unison Code
+
+**scratch.u**
+```Haskell
+use base.List
+
+> range 0 10
+---
+...
+```
+
+Function arguments are separated by spaces (`range 0 10` calls the `range` function, giving it `0` and `10`), and function application binds tighter than any operator, so `f x y + g p q` parses as `(f x y) + (g p q)`. You can always use parentheses to control grouping more explicitly. Unison responds
+
+**Unison**
+```
+  ✅
+
+  ~/unisoncode/scratch.u changed.
+
+  Now evaluating any watch expressions (lines starting with
+  `>`)... Ctrl+C cancels.
+
+    3 | > range 0 10
+          ⧩
+          [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+```
+
+When you have to go on a detour, you can put the fold wherever is convenient (often right after your existing `use` statements saves you from needing to reestablish a similar set of imports). When you're done, you can delete the stuff above the fold or send it to the end of the file, then get back to what you were doing below the fold.
+
+## Your first Unison code
+
 It’s time to write some code. Put the following in your `scratch.u` file, above the fold:
 
 **scratch.u**
@@ -434,4 +477,25 @@ Your code is now live on the internet! Others can get your definitions of `halve
 ## What next?
 TODO: Where do we direct readers next after this?
 
+
+### The Unison namespace, paths, and imports
+
+Meta: this section seems boring and not needed...
+
+The _Unison namespace_ is the mapping from names to definitions. Names in Unison look like this: `math.sqrt`, `.base.Int`, `base.Nat`, `base.Nat.*`, `++`, or `frobnicate`. That is: an optional `.`, followed by one or more segments separated by a `.`, with the last segment allowed to be an operator name like `*` or `++`.
+
+We often think of these names as forming a tree, much like a directory of files, and names are like file paths in this tree. _Absolute_ names (like `.base.Int`) start with a `.` and are paths from the root of this tree and _relative_ names (like `math.sqrt`) are paths starting from the "current path", which you can set using the `path` command:
+
+```
+.> path base
+.base>
+```
+
+Notice the prompt changes to `.base>`, indicating your current path is now `.base`. When editing scratch files, any relative names not locally bound in your file will be resolved by prefixing them with the current absolute path of `.base`.
+
+
+You can always refer to definitions using some absolute name (try evaluating `.base.List.reverse [1,2,3]`) but the `use` statement lets us refer to things using a shorter, relative name. So we
+
+
+Nothing too exciting here.
 

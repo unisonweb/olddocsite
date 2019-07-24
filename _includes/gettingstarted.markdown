@@ -15,7 +15,7 @@ If there is one motivating idea behind Unison, it's this: the tools for making s
 
 > 🧐 That said, boiling the ocean can take a long time. It's sensible to make decisions about when and where to innovate and not try to innovate All The Things right now. But let's be honest that this is what we're doing... and not forget to keep making things better later!
 
-Okay, but if there is one big _technical_ idea behind Unison, explored in pursuit of our overall goals, it's this: __Unison definitions are identified by content.__ Each definition is some syntax tree, hashed in a way that incorporates the hashes of all the dependencies of that definition and which is independent of the names of these definitions. A Unison hash uniquely identifies a Unison definition. This is the basis for some serious improvements to the programmer experience: it eliminates builds and most dependency conflicts, allows for easy dynamic deployment of code, typed durable storage, and lots more.
+Okay, but if there is one big _technical_ idea behind Unison, explored in pursuit of our overall goals, it's this: __Unison definitions are identified by content.__ Each definition is some syntax tree, and by hashing this tree in a way that incorporates the hashes of all the dependencies of that definition we obtain the Unison hash which uniquely identifies that definition. This is the basis for some serious improvements to the programmer experience: it eliminates builds and most dependency conflicts, allows for easy dynamic deployment of code, typed durable storage, and lots more.
 
 But this one technical idea is also a bit weird. The implications of it are weird! Consider this: if definitions are identified by their content, there's no such thing as changing a definition, there's only introducing new definitions. What can change is how we map definitions to human-friendly names. e.g. `x -> x + 1` (a definition) vs `Int.increment` (a name we associate with it for the purposes of writing and reading other code that references it). An analogy: Unison definitions are like stars in the sky. We can discover new stars and create new star maps that pick different names for the stars, but the stars exist independently of what we choose to call them.
 
@@ -70,7 +70,7 @@ Here, we did a type-based search for functions of type `[a] -> [a]`, got a list 
 
 ### Names are stored separately from definitions so renaming is fast and 100% accurate
 
-The Unison codebase, in its definititon for `reverse`, doesn't store the names for the definitions it depends on (like the `foldl` function). All definitions in Unison are given a unique, content-based hash, and references to dependencies use this hash. As a result, changing the name(s) associated with a definition is easy as pie.
+The Unison codebase, in its definititon for `reverse`, doesn't store the names for the definitions it depends on (like the `foldl` function), it references these definitions via their hash. As a result, changing the name(s) associated with a definition is easy as pie.
 
 Let's try this out. `reverse` is defined using `List.foldl`. Geez, "foldl", what the heck is that?? Down with pointless abbreviations! Let's rename that to `List.foldLeft`. Try out the following command (you can use tab completion here to help if you like):
 
@@ -99,11 +99,11 @@ So rename and move things around as much as you want. Don't worry about picking 
 
 > 🤓 If you're curious to learn about the guts of the Unison codebase format, you can check out the [v1 codebase format specification][repoformat].
 
-Okie dokie, let's go ahead and try out this `reverse` function and learn more about Unison's interactive way of writing and editing code:
+Okie dokie, let's next try out this `reverse` function and learn more about Unison's interactive way of writing and editing code:
 
 ### Unison scratch files are like spreadsheets and replace the usual read-eval-print-loop (REPL)
 
-The codebase manager lets you make changes to your codebase and explore the definitions it contains, but it also listens for changes to any file ending in `.u` in the current directory (including any subdirectories). When any such file is saved, it parses and typechecks that file and runs any _watch expressions_, which are lines starting with `>`. Let's try this out.
+The codebase manager lets you make changes to your codebase and explore the definitions it contains, but it also listens for changes to any file ending in `.u` in the current directory (including any subdirectories). When any such file is saved (which we call a "scratch file"), it parses and typechecks that file and runs any _watch expressions_, which are lines starting with `>`. Let's try this out.
 
 Keep your `unison` terminal running and open up a file, `scratch.u` (or `frobnicate.u`, or whatever you like) in your preferred editor, and add a few watch expressions:
 

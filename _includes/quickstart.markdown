@@ -1,9 +1,10 @@
 # 3 minute quickstart guide
 
-This short guide will have you downloading Unison, running your first program (a toy distributed mergesort implementation), and publishing your first definition. The focus here is on getting you up and running as quickly as possible. 🏎 More in-depth guides follow this one.
+This short guide will have you downloading and installing Unison and running your first program (a toy distributed mergesort implementation). There isn't much exposititon here and the focus here is on getting you up and running as quickly as possible. 🏎 
+
+More in-depth guides follow this one.
 
 If you have any trouble with the process or ideas about how to improve this document, [come talk to us in Slack][slack]! Also this document is [on GitHub][on-github].
-
 
 [slack]: https://join.slack.com/t/unisonlanguage/shared_invite/enQtNzAyMTQ4ODA0MDM4LWYxZTNkMGUxMDEzNTg3NTMxNjMxOGM2Zjg4ODFjM2RhNGY0OGU2NTMzYmQ1YWIwN2Y0YTc1NjQ1NjgzYzEzOWI
 [mac-dl]: https://www.dropbox.com/s/6vl246m4faaps5k/unison?dl=0
@@ -24,7 +25,7 @@ Create a new directory, `unisoncode` (or any name you choose), then run the `uni
 
 ### Step 3: Fetch and run a distributed mergesort example
 
-At the Unison `.>` prompt, do:
+Prerequisites for this step: you'll need to have Git installed and on your path. At the Unison `.>` prompt, do:
 
 ```
 .> pull git@github.com:unisonweb/unisonbase.git
@@ -43,37 +44,6 @@ Open that file and add the following _watch expression_ (a line starting with `>
 <script id="asciicast-aTn8qIa3DHaxhspsZJmXodfO7" src="https://asciinema.org/a/aTn8qIa3DHaxhspsZJmXodfO7.js" data-speed="2" async></script>
 
 You should see your watch expression evaluate to a sorted list.  _Disclaimer:_ This example is just a toy that simulates execution locally and does no error handling, but it shows the general idea of being able to test Unison distributed programs locally (perhaps with simulated latency and failures injected) and then run the same programs unchanged atop an actual elastic source of distributed compute!
-
-### Step 4: Publishing your first definition
-
-Let's try publishing some code. First, fork the Unison base library, using the button below. This creates a valid minimal Unison codebase repo that you can push to:
-
-<iframe src="https://ghbtns.com/github-btn.html?user=unisonweb&repo=unisonbase&type=fork&count=true&size=large" frameborder="0" scrolling="0" width="158px" height="30px"></iframe>
-
-Then add the following to the top of your `scratch.u` file and save:
-
-```haskell
-firstlibrary.frobnicate x = x * 2
-
---- include this too, it's called "the fold"
-```
-
-Include that `---` at the end to ignore the `dsort` definition below (or you can delete the `dsort` definition - you can always get it back via `edit`). Then from the `unison` prompt:
-
-```
-.> add
-.> push git@github.com:<your-githubusername>/unisonbase.git
-```
-
-Code is published just by being pushed to GitHub; there's no extra publication step. Others can use any namespace of definitions you've published just using `pull`. We'll cover how more about how library publishing and upgrades work in detail in a later guide, but the process of installing a new namespace of definitions looks like:
-
-```
-.> pull git@github.com:<github-username>/unisonbase.git install
-.> move.path install.firstlibrary awesomelibrary
-.> delete.path install
-```
-
-And then `awesomelibrary.frobnicate` will be resolved to the `frobnicate` definition you published.
 
 ### What next?
 

@@ -455,6 +455,7 @@ But this is just a naming convention, there's nothing magic happening here.
 Now let's publish our `mylibrary` to a fresh Unison repo. First, fork the Unison base library, using the button below (you'll need a GitHub account to do this). This creates a valid minimal Unison codebase repo that you can push to:
 
 <iframe src="https://ghbtns.com/github-btn.html?user=unisonweb&repo=unisonbase&type=fork&count=true&size=large" frameborder="0" scrolling="0" width="158px" height="30px"></iframe>
+<br/>
 
 > ☝️ There's nothing special about using GitHub here; you can also host your Unison git repos elsewhere. Just use whatever git URL you'd use on your git hosting provider for a `git push`.
 

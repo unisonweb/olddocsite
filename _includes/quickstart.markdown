@@ -28,7 +28,7 @@ Create a new directory, `unisoncode` (or any name you choose), then run the `uni
 Prerequisites for this step: you'll need to have Git installed and on your path. At the Unison `.>` prompt, do:
 
 ```
-.> pull git@github.com:unisonweb/unisonbase.git
+.> pull https://github.com/unisonweb/unisonbase.git
 ``` 
 
 to fetch a base library with the example you'll be running. You'll see some output from `git` in the background, and once that's done you can do `edit quickstart.dsort` to add the `dsort` distributed mergesort function to the top of a newly created _scratch file_, `scratch.u`:

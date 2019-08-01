@@ -4,7 +4,9 @@ Thanks for participating in alpha testing of Unison. This document has a quick p
 
 This alpha release (which we're calling "Milestone 1" or "M1") is mostly focused on the core Unison language and its tooling. With this release, you should be able to to write new Unison code using other Unison libraries and publish new code yourself. The tools you'll use for this are just your preferred text editor and the _Unison codebase manager_. The codebase manager is an all-in-one tool you'll get to know well that handles everything other than text editing related to working with Unison code: typechecking it, running it, browsing the codebase, refactoring, publishing, and so on.
 
-There's very few libraries in this M1 release and the distributed programming example you'll run in the quickstart guide is just a toy. You will not hear us claiming that we have solved distributed programming or anything like that. Over the next 6 months, with the foundations of the language and tooling now laid down, we do plan to start rolling out real libraries for doing distributed programming in Unison, and that will be pretty exciting. :) See the rough roadmap below.
+There's very few libraries in this M1 release and the distributed programming example you'll run to get started is just a toy. You will not hear us claiming that we have solved distributed programming or anything like that. Over the next 6 months, with the foundations of the language and tooling now laid down, we do plan to start rolling out real libraries for doing distributed programming in Unison, and that will be pretty exciting. :) See the rough [roadmap](#roadmap) below if you're curious.
+
+Or jump right to the [install and quickstart guide](quickstart.html) to get going.
 
 ### <a id="roadmap"></a>Roadmap
 
@@ -18,3 +20,7 @@ There's very few libraries in this M1 release and the distributed programming ex
 * Other core libraries that for whatever reason can't be implemented in pure Unison, though generally we would prefer to add a minimal set of new primitives to the language so that innovation can be done by anyone as a pure Unison library. The distributed programming support is an example of this: it will be built off a few primitives for code hashing and serialization so that anyone can innovate on new libraries and protocols without needing a language upgrade.
 
 Longer term, we expect to be starting up work again on the [Unison semantic editor](http://unisonweb.org/2016-03-16/semantic-vs-text.html). This will basically be a different front-end for the codebase manager which talks to the same model and shares much of the same code, and Unison code could be written using the current command line interface + text editor, the semantic editor, or both.
+
+### What's next?
+
+Go to the [install and quickstart guide](quickstart.html) to get started.

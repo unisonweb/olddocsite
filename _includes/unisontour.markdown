@@ -7,7 +7,7 @@ If you want to follow along with this document (highly recommended), this guide 
 The source for this document is [on GitHub][on-github]. Feedback and improvements are most welcome!
 
 [repoformat]: https://github.com/unisonweb/unison/blob/master/docs/repoformats/v1-DRAFT.markdown
-[on-github]: todo
+[on-github]: https://github.com/unisonweb/docsite/blob/master/_includes/unisontour.markdown
 [roadmap]: roadmap.html
 [quickstart]: quickstart.html
 [langref]: languagereference.html
@@ -118,6 +118,7 @@ Keep your `unison` terminal running and open up a file, `scratch.u` (or `foo.u`,
 
 **scratch.u**
 ```
+square : Nat -> Nat
 square x = x * x
 ```
 
@@ -143,6 +144,7 @@ It typechecked the `square` function and inferred that it takes a natural number
 
 **scratch.u**
 ```
+square : Nat -> Nat
 square x = x * x
 
 > square 4
@@ -207,6 +209,7 @@ Let's add add a test for our `square` function:
 
 **scratch.u**
 ```
+square : Nat -> Nat
 square x = x * x
 
 use test.v1
@@ -385,17 +388,18 @@ This copies the pretty-printed definition of `square` into you scratch file "abo
 
 > Notice that Unison has put the correct type signature on `square`. The absolute names `.base.Nat` look a bit funny. We will often do `use .base` at the top of our file to refer to all the basic functions and types in `.base` without a fully qualified name.
 
-Let's edit `square` and instead define `square x` (just for fun) as the sum of the odd numbers less than `x * 2`:
+Let's edit `square` and instead define `square x` (just for fun) as the sum of the first `x` odd numbers:
 
 **scratch.u**
 ```Haskell
-use Nat >
+use .base
 
 square : .base.Nat -> .base.Nat
-square x = 
-  go k acc = 
-    if k > 0 then go (k + 1) (k * 2 `drop` 1 + acc) else acc
-  go x 0
+square x =
+  sum (map (x -> x * 2 + 1) (range 0 x))
+
+sum : [Nat] -> Nat
+sum = foldl (+) 0
 ```
 
 **Unison**
@@ -417,17 +421,27 @@ Notice the message says that `square` is "ok to `update`". Let's try that:
 ```
 .mylibrary> update
 
+  ⍟ I've added these definitions:
+  
+    sum : [.base.Nat] -> .base.Nat
+  
   ⍟ I've updated to these definitions:
-
-    square  : .base.Nat -> .base.Nat
+  
+    square             : .base.Nat -> .base.Nat
 ```
 
 If we rerun the tests, the tests won't be cached this time, since one of their dependencies has actually changed:
 
+**Unison**
 ```
-.mylibrary> test
+New test results:                                                                                 
 
-TODO: fixme - update doesn't propagate
+◉ tests.square.prop1    : Passed 100 tests.
+◉ tests.square.ex1      : Passed 1 tests.
+
+✅ 2 test(s) passing
+
+Tip: Use view tests.square.prop1 to view the source of a test.
 ```
 
 Notice the message indicates that the tests weren't cached. If we do `test` again, we'll get the newly cached results.

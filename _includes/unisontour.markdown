@@ -238,6 +238,7 @@ Let's test this a bit more thoroughly. `square` should have the property that `s
 
 **scratch.u**
 ```
+square : Nat -> Nat
 square x = x * x
 
 use test.v1
@@ -328,7 +329,7 @@ When we added `square`, we were at the root, so `square` and its tests are direc
 
 .mylibrary> find
 
-  1.  square  : .base.Nat -> .base.Nat
+  1.  square : .base.Nat -> .base.Nat
 
 .mylibrary> move.namespace .tests tests
 
@@ -340,9 +341,9 @@ We're using `.square` to refer to the `square` definition directly under the roo
 ```
 .mylibrary> find
 
-  1.  tests.square.ex1  : [.base.Test.Result]
-  2.  tests.square.prop1  : [.base.Test.Result]
-  3.  square  : .base.Nat -> .base.Nat
+  1.  tests.square.ex1 : [.base.Test.Result]
+  2.  tests.square.prop1 : [.base.Test.Result]
+  3.  square : .base.Nat -> .base.Nat
 ```
 
 Also notice that we don't need to rerun our tests after this reshuffling. The tests are still cached:
@@ -411,7 +412,7 @@ I found and typechecked these definitions in ~/Dropbox/projects/unison/scratch.u
 
   ⍟ These new definitions will replace existing ones of the same name and are ok to `update`:
 
-    square  : .base.Nat -> .base.Nat
+    square : .base.Nat -> .base.Nat
 
 Now evaluating any watch expressions (lines starting with `>`)... Ctrl+C cancels.
 ```
@@ -459,9 +460,9 @@ Unison code is published just by virtue of it being pushed to github; there's no
 .> cd mylibrary.releases.v1
 .mylibrary.releases.v1> find
 
-  1.  tests.square.ex1  : [.base.Test.Result]
-  2.  tests.square.prop1  : [.base.Test.Result]
-  3.  square  : .base.Nat -> .base.Nat
+  1.  tests.square.ex1 : [.base.Test.Result]
+  2.  tests.square.prop1 : [.base.Test.Result]
+  3.  square : .base.Nat -> .base.Nat
 ```
 
 But this is just a naming convention, there's nothing magic happening here.

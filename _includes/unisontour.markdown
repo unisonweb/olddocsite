@@ -394,12 +394,12 @@ Let's edit `square` and instead define `square x` (just for fun) as the sum of t
 ```Haskell
 use .base
 
-square : .base.Nat -> .base.Nat
+square : Nat -> Nat
 square x =
   sum (map (x -> x * 2 + 1) (range 0 x))
 
 sum : [Nat] -> Nat
-sum = foldl (+) 0
+sum = foldLeft (+) 0
 ```
 
 **Unison**

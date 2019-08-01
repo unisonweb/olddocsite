@@ -7,15 +7,15 @@ More in-depth guides follow this one.
 If you have any trouble with the process or ideas about how to improve this document, [come talk to us in the #alphatesting Slack channel][slack]! Also this document is [on GitHub][on-github].
 
 [slack]: https://join.slack.com/t/unisonlanguage/shared_invite/enQtNzAyMTQ4ODA0MDM4LWYxZTNkMGUxMDEzNTg3NTMxNjMxOGM2Zjg4ODFjM2RhNGY0OGU2NTMzYmQ1YWIwN2Y0YTc1NjQ1NjgzYzEzOWI
-[mac-dl]: todo
-[linux-dl]: todo
+[mac-dl]: https://github.com/unisonweb/unison/releases/download/untagged-daded0a07a0b3f5e9313/unison-osx
+[linux-dl]: https://github.com/unisonweb/unison/releases/download/untagged-daded0a07a0b3f5e9313/unison-linux64
 [windows-dl]: todo
-[on-github]: todo
+[on-github]: https://github.com/unisonweb/docsite/edit/gh-pages/_includes/quickstart.markdown
 [guide]: unisontour.html
 
 ### Step 1: Download Unison
 
-Download the `unison` executable for [Mac][mac-dl], [Linux][linux-dl], or [Windows][windows-dl] and then (optional) add it to your path.
+Download the `unison` executable for [Mac][mac-dl] or [Linux][linux-dl] and then (optional) add it to your path.
 
 ### Step 2: Create your Unison codebase
 

@@ -1,28 +1,30 @@
- A tour of Unison
+# A tour of Unison
 
-This guide assumes you've already gone through the steps in [the quickstart guide](quickstart.html). We recommend going through that guide before continuing here.
+This document introduces "the big idea" behind Unison and walks through the basics of using the Unison codebase manager to develop and publish your first Unison library. We will introduce bits and pieces of the core Unison language and its syntax as we go. The [Unison language reference][langref] is a more in-depth resource on this if you have questions or want to learn more.
+
+If you want to follow along with this document (highly recommended), this guide assumes you've already gone through the steps in [the quickstart guide](quickstart.html).
 
 The source for this document is [on GitHub][on-github]. Feedback and improvements are most welcome!
 
-[repoformat]: todo
+[repoformat]: https://github.com/unisonweb/unison/blob/master/docs/repoformats/v1-DRAFT.markdown
 [on-github]: todo
-[roadmap]: todo
+[roadmap]: roadmap.html
 [quickstart]: quickstart.html
 [langref]: languagereference.html
 
 ### 🧠 The big idea
 
-If there is one motivating idea behind Unison, it's this: the technology for creating software should be _thoughtfully crafted_ in all aspects. Needless complexity and difficulties should be stripped away, leaving only that exhilarating creative essence of programming that made many of us want to learn this subject in the first place. Or at the very least, if we can't have this, let's have programming be _reasonable_. The fact that things were done a certain way in the 1970s is not a good way to keep doing them, especially if they make programming worse.
+If there is one motivating idea behind Unison, it's this: the technology for creating software should be _thoughtfully crafted_ in all aspects. Needless complexity and difficulties should be stripped away, leaving only that exhilarating creative essence of programming that made many of us want to learn this subject in the first place. Or at the very least, if we can't have this, let's have programming be _reasonable_. The fact that things were done a certain way in the 1970s is not a good reason to keep doing them, especially if they make programming worse.
 
 That said, it's sensible to make compromises regarding when and where to innovate, rather than trying to revolutionize everything right now. But let's be honest that it's a compromise, and not forget to improve things later.
 
 Now, if there is one big _technical_ idea behind Unison, explored in pursuit of the overall goal of making programming better, it's this: __Unison definitions are identified by content.__ Each Unison definition is some syntax tree, and by hashing this tree in a way that incorporates the hashes of all that definition's dependencies, we obtain the Unison hash which uniquely identifies that definition. This is the basis for some serious improvements to the programmer experience: it eliminates builds and most dependency conflicts, allows for easy dynamic deployment of code, typed durable storage, and lots more.
 
-But this one technical idea is also a bit weird, and it has far-reaching consequences. Consider this: if definitions are identified by their content, there's no such thing as changing a definition, there's only introducing new definitions. What can change is how we map definitions to human-friendly names. For example, `x -> x + 1` (a definition) as opposed to `Int.increment` (a name we associate with it for the purposes of writing and reading other code that references it). An analogy: Unison definitions are like stars in the sky. We can discover the stars in the sky and make up new constellations that pick different names for the stars, but the stars exist independently of what we choose to call them.
+When taken to its logical endpoint, this idea of content-addressed code has some striking implications. Consider this: if definitions are identified by their content, _there's no such thing as changing a definition_, only introducing new definitions. That's interesting. What may change is how definitions are mapped to human-friendly names. For example, `x -> x + 1` (a definition) as opposed to `Nat.increment` (a name we associate with it for the purposes of writing and reading other code that references it). An analogy: Unison definitions are like stars in the sky. We can discover the stars in the sky and pick different names for these stars, but the stars exist independently of what we choose to call them.
 
-The longer you spend with this weird idea, the more it starts to take hold of you. You start seeing the need for it everywhere. And you start wanting to see the implications of it worked out in detail.
+But the longer you spend with the odd idea of content-addressed code, the more it starts to take hold of you. It's not arbitrary or strange, but a logical and sensible choice with tremendous practical benefits. You start to appreciate the simplicity of the idea and see the need for it everywhere ("this would be a lot easier if the code were content-addressed..."). Is it really feasible, though, to build a programming language around this idea? 
 
-It does raise lots of questions, though. Like even if definitions themselves are unchanging, we certainly may change which definitions we are interested in and give nice names to. How does that work? How do I refactor or upgrade code? Is the codebase still just a mutable bag of text files, or do we need something else?
+Part of the fun in building Unison was in working through the implications of what seemed like a great core idea. A big question that arose: even if definitions themselves are unchanging, we do sometimes want to change which definitions we are interested in and assign nice names to. So how does that work? How do you refactor or upgrade code? Is the codebase still just a mutable bag of text files, or do we need something else?
 
 We __do__ need something else to make it nice to work with content-addressed code. In Unison we call this something else the _Unison Codebase Manager_.
 
@@ -39,12 +41,12 @@ What's happening here? This is the Unison Codebase Manager starting up and initi
 
 The Unison codebase format has a few key properties:
 
-* It is _append-only_: once a file in the `.unison` directory is created, it is never modified, and files are always named uniquely and deterministically based on their content.
+* It is _append-only_: once a file in the `.unison` directory is created, it is never modified or deleted, and files are always named uniquely and deterministically based on their content.
 * As a result, a Unison codebase can be versioned and synchronized with Git or any similar tool and will never generate a conflict in those tools.
 
 > 🐘 Remember that `pull git@github.com:unisonweb/unisonbase.git` we used in the [quickstart guide][quickstart]. This command uses git behind the scenes to sync new definitions from the remote Unison codebase to the local codebase.
 
-Because of the append-only nature of the codebase format, we can cache all sorts of interesting information about definitions in the codebase and _never have to worry about cache invalidation_. For instance, Unison is a statically typed language and we know the type of all definitions added to the codebase, which is always in a well-typed state. So one thing that's useful and easy to maintain is an index that lets us query for definitions in the codebase by their type. Try out the following commands (new syntax is explained below):
+Because of the append-only nature of the codebase format, we can cache all sorts of interesting information about definitions in the codebase and _never have to worry about cache invalidation_. For instance, Unison is a statically-typed language and we know the type of all definitions in the codebase--the codebase is always in a well-typed state. So one thing that's useful and easy to maintain is an index that lets us search for definitions in the codebase by their type. Try out the following commands (new syntax is explained below):
 
 __unison__
 ```
@@ -79,7 +81,7 @@ Here, we did a type-based search for functions of type `[a] -> [a]`, got a list 
 
 The Unison codebase, in its definition for `reverse`, doesn't store names for the definitions it depends on (like the `foldl` function); it references these definitions via their hash. As a result, changing the name(s) associated with a definition is easy.
 
-Let's try this out. `reverse` is defined using `List.foldl`, where `l` is a kind of pointless abbreviation of `left`. Let's rename that to `List.foldLeft` to make things clearer. Try out the following command (you can use tab completion here if you like):
+Let's try this out. `reverse` is defined using `List.foldl`, where `l` is a needless abbreviation for `left`. Let's rename that to `List.foldLeft` to make things clearer. Try out the following command (you can use tab completion here if you like):
 
 ```
 .> move.term base.List.foldl base.List.foldLeft
@@ -469,7 +471,7 @@ You'll see some git logging output. Your code is now live on the internet!
 
 ### Installing libraries written by others
 
-This section under construction.
+This section is under construction.
 
 From the root, do:
 

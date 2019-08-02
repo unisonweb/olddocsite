@@ -49,7 +49,7 @@ Open that file and add the following _watch expression_ (a line starting with `>
 > runLocal '(quickstart.dsort (<) [8,2,3,1,4,5,6,7])
 ```
 
-<script id="asciicast-aTn8qIa3DHaxhspsZJmXodfO7" src="https://asciinema.org/a/aTn8qIa3DHaxhspsZJmXodfO7.js" data-speed="1.4" async></script>
+<script id="asciicast-aTn8qIa3DHaxhspsZJmXodfO7" src="https://asciinema.org/a/aTn8qIa3DHaxhspsZJmXodfO7.js" data-speed="1.4" data-t="0.4" async></script>
 
 You should see your watch expression evaluate to a sorted list. You are now up and running!
 

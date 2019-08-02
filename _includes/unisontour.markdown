@@ -114,7 +114,7 @@ OK, go drink some water, and then let's learn more about Unison's interactive wa
 
 The codebase manager lets you make changes to your codebase and explore the definitions it contains, but it also listens for changes to any file ending in `.u` in the current directory (including any subdirectories). When any such file is saved (which we call a "scratch file"), Unison parses and typechecks that file. Let's try this out.
 
-Keep your `unison` terminal running and open up a file, `scratch.u` (or `foo.u`, or whatever you like) in your preferred editor, and put the following in your scratch file:
+Keep your `ucm` terminal running and open up a file, `scratch.u` (or `foo.u`, or whatever you like) in your preferred editor, and put the following in your scratch file:
 
 **scratch.u**
 ```

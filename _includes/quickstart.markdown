@@ -12,14 +12,32 @@ If you have any trouble with the process, or have ideas about how to improve thi
 [windows-dl]: todo
 [on-github]: https://github.com/unisonweb/docsite/edit/gh-pages/_includes/quickstart.markdown
 [guide]: unisontour.html
+[homebrew]: https://brew.sh/
 
-### Step 1: Download Unison
+### Step 1: Install Unison
 
-Download the `unison` executable for [Mac][mac-dl] or [Linux][linux-dl] and then optionally add it to your path.
+Note: This alpha release is for Mac OS X and 64-bit Linux only. Windows users, there will be a Unison release for you some day soon.
+
+#### Option 1: Using Homebrew
+
+First [install homebrew][homebrew] if you haven't already.
+
+Then from the command line enter these commands:
+
+```
+brew tap unisonweb/unison
+brew install unison-language
+```
+
+This will install the Unison codebase manager executable `ucm`.
+
+#### Option 2: Install manually
+
+Download the Unison tarball for [Mac][mac-dl] or [Linux][linux-dl], decompress the tarball to find the delicious `ucm` binary inside, and then optionally copy or link `ucm` somewhere on your path.
 
 ### Step 2: Create your Unison codebase
 
-Create a new directory, `unisoncode` (or any name you choose), then run the `unison` binary from within that directory. You'll see a note about "No codebase exists here so I'm initializing one..." and a welcome screen.
+Create a new directory, `unisoncode` (or any name you choose), then run the `ucm` binary from within that directory. You'll see a note about "No codebase exists here so I'm initializing one..." and a welcome screen.
 
 <script id="asciicast-IYWfFwIgyl9Gilk3ZExvLfOjg" src="https://asciinema.org/a/IYWfFwIgyl9Gilk3ZExvLfOjg.js" data-speed="1.4" data-cols="65" async></script>
 
@@ -58,4 +76,4 @@ _Disclaimer:_ This example is a toy that simulates execution locally and does no
 ### What next?
 
 * Come [say hello in Slack][slack], tell us what you thought about this guide, and ask questions. 👋
-* A [more leisurely guide][guide] to the Unison language and the `unison` command line tool. (25 minutes)
+* A [more leisurely guide][guide] to the Unison language and the `ucm` command line tool. (25 minutes)

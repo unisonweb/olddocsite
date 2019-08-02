@@ -70,7 +70,7 @@ Here, we did a type-based search for functions of type `[a] -> [a]`, got a list 
 * `base.List.reverse : [a] -> [a]` is the syntax for giving a type signature to a definition. We pronounce the `:` symbol as "has type", as in "reverse has the type `[a] -> [a]`".
 * `[Nat]` is the syntax for the type which is lists of natural numbers (terms like `[0,1,2]` and `[3,4,5]`, and `[]` will have this type), and more generally `[Foo]` is the type of lists whose elements have type `Foo`.
 * Any lowercase variable in a type signature is assumed to be _universally quantified_, so `[a] -> [a]` really means and could be written `forall a . [a] -> [a]`, which is the type of functions that take a list whose elements are any type, and return a list of elements of that same type.
-* `base.List.reverse` takes one parameter, called `as`. The stuff after the `=` is called the _body_ of the function, and here it's a [block](languagereference.markdown#blocks), which is demarcated by whitespace.
+* `base.List.reverse` takes one parameter, called `as`. The stuff after the `=` is called the _body_ of the function, and here it's a [block](languagereference.md#blocks), which is demarcated by whitespace.
 * `acc a -> ..` is the syntax for an anonymous function.
 * Function arguments are separated by spaces and function application binds tighter than any operator, so `f x y + g p q` parses as `(f x y) + (g p q)`. You can always use parentheses to control grouping more explicitly.
 * `use base.List cons` lets us reference `base.List.cons` using just `cons`. Import statements like this can be placed in any Unison block; they don't need to go at the top of your file.

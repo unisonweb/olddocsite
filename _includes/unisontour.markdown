@@ -306,7 +306,7 @@ Now that we've added our `square` function to the codebase, how do we reference 
 
 The _Unison namespace_ is the mapping from names to definitions. Names in Unison look like this: `math.sqrt`, `.base.Int`, `base.Nat`, `base.Nat.*`, `++`, or `foo`. That is: an optional `.`, followed by one or more segments separated by a `.`, with the last segment allowed to be an operator name like `*` or `++`.
 
-We often think of these names as forming a tree, much like a directory of files, and names are like file paths in this tree. [Absolute names](languagereference.html#absolutely-qualified-identifiers) (like `.base.Int`) start with a `.` and are paths from the root of this tree and _relative_ names (like `math.sqrt`) are paths starting from the current namespace, which you can set using the `namespace` command:
+We often think of these names as forming a tree, much like a directory of files, and names are like file paths in this tree. [Absolute names](languagereference.html#absolutely-qualified-identifiers) (like `.base.Int`) start with a `.` and are paths from the root of this tree and _relative_ names (like `math.sqrt`) are paths starting from the current namespace, which you can set using the `namespace` (or equivalently `cd`) command:
 
 ```
 .> namespace mylibrary
@@ -452,8 +452,8 @@ Notice the message indicates that the tests weren't cached. If we do `test` agai
 Unison code is published just by virtue of it being pushed to github; there's no separate publication step. You might choose to make a copy of your namespace. Let's go ahead and do this:
 
 ```
-.mylibrary> path .
-.> copy.path mylibrary mylibrary.releases.v1
+.mylibrary> cd .
+.> copy.namespace mylibrary mylibrary.releases.v1
 
   Done.
 
@@ -474,11 +474,11 @@ Now let's publish our `mylibrary` to a fresh Unison repo. First, fork the Unison
 
 > ☝️ There's nothing special about using GitHub here; you can also host your Unison git repos elsewhere. Just use whatever git URL you'd use on your git hosting provider for a `git push`.
 
-After you've forked the base repo, you can push to it:
+After you've forked the base repo, feel free to rename it to anything you like, or keep the name `unisonbase`. You can then push to it:
 
 **Unison**
 ```
-.mylibrary.releases.v1> path .
+.mylibrary.releases.v1> cd .
 .> push git@github.com:<yourgithubuser>/unisonbase.git
 ```
 
@@ -493,8 +493,8 @@ From the root, do:
 ```
 .> pull git@github.com:<github-username>/unisonbase.git temp
 ..
-.> move.path temp.myfirstlibrary.releases.v1 myfirstlibrary
-.> delete.path temp
+.> move.namespace temp.myfirstlibrary.releases.v1 myfirstlibrary
+.> delete.namespace temp
 ```
 
 The namespace you created is now available under `.myfirstlibrary`, so `.myfirstlibrary.square` will resolve to the function you wrote.
@@ -503,4 +503,3 @@ The namespace you created is now available under `.myfirstlibrary`, so `.myfirst
 
 * [The core language reference][langref] describes Unison's core language and current syntax in more detail.
 * TODO: writing a more interesting library
-

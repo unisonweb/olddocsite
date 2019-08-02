@@ -434,7 +434,7 @@ An exception to the evaluation semantics is [Boolean expressions](#boolean-expre
 Unison performs [tail call elimination](https://en.wikipedia.org/wiki/Tail_call) at compile-time.
 
 
-#### Function application precedence
+#### Syntactic precedence
 
 Prefix function application:
 

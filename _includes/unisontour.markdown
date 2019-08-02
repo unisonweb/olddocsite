@@ -67,13 +67,13 @@ __unison__
 
 Here, we did a type-based search for functions of type `[a] -> [a]`, got a list of results, and then used the `view` command to look at the nicely formatted source code of one of these results. Let's introduce some Unison syntax:
 
-* `base.List.reverse : [a] -> [a]` is the syntax for giving a type signature to a definition. We pronounce the `:` symbol as "has type", as in "reverse has the type `[a] -> [a]`".
-* `[Nat]` is the syntax for the type which is lists of natural numbers (terms like `[0,1,2]` and `[3,4,5]`, and `[]` will have this type), and more generally `[Foo]` is the type of lists whose elements have type `Foo`.
-* Any lowercase variable in a type signature is assumed to be _universally quantified_, so `[a] -> [a]` really means and could be written `forall a . [a] -> [a]`, which is the type of functions that take a list whose elements are any type, and return a list of elements of that same type.
+* `base.List.reverse : [a] -> [a]` is the syntax for giving a [type signature](languagereference.html#type-signature) to a definition. We pronounce the `:` symbol as "has type", as in "reverse has the type `[a] -> [a]`".
+* `[Nat]` is the syntax for the type consisting of lists of natural numbers (terms like `[0,1,2]` and `[3,4,5]`, and `[]` will have this type), and more generally `[Foo]` is the type of lists whose elements have some type `Foo`.
+* Any lowercase variable in a type signature is assumed to be [universally quantified](languagereference.html#polymorphic-types), so `[a] -> [a]` really means and could be written `forall a . [a] -> [a]`, which is the type of functions that take a list whose elements are some (but any) type, and return a list of elements of that same type.
 * `base.List.reverse` takes one parameter, called `as`. The stuff after the `=` is called the _body_ of the function, and here it's a [block](languagereference.html#blocks-and-statements), which is demarcated by whitespace.
 * `acc a -> ..` is the syntax for an anonymous function.
 * Function arguments are separated by spaces and function application binds tighter than any operator, so `f x y + g p q` parses as `(f x y) + (g p q)`. You can always use parentheses to control grouping more explicitly.
-* `use base.List cons` lets us reference `base.List.cons` using just `cons`. Import statements like this can be placed in any Unison block; they don't need to go at the top of your file.
+* The declaration `use base.List cons` lets us reference `base.List.cons` using just `cons`. [Use clauses](languagereference.html#use-clauses) like this can be placed in any Unison block; they don't need to go at the top of your file.
 
 > Try doing `view base.List.foldl` if you're curious to see how it's defined.
 
@@ -102,13 +102,13 @@ To make this happen, Unison just changed the name associated with the hash of `f
 
 This is important: Unison __isn't__ doing a bunch of text mutation on your behalf, updating possibly thousands of files, generating a huge textual diff, and also breaking a bunch of downstream library users who are still expecting that definition to be called by the old name. That would be crazy, right?
 
-So rename and move things around as much as you want. Don't worry about picking a perfect name the first time. Give the same definition multiple names if you want, it's all good!
+So rename and move things around as much as you want. Don't worry about picking a perfect name the first time. Give the same definition multiple names if you want. It's all good!
 
 > ☝️ Using `alias.term` instead of `move.term` introduces a new name for a definition without removing the old name(s).
 
 > 🤓 If you're curious to learn about the guts of the Unison codebase format, you can check out the [v1 codebase format specification][repoformat].
 
-Drink some water and then let's learn more about Unison's interactive way of writing and editing code.
+OK, go drink some water, and then let's learn more about Unison's interactive way of writing and editing code.
 
 ### Unison scratch files are like spreadsheets and replace the usual read-eval-print-loop
 
@@ -159,7 +159,7 @@ And Unison replies:
       16
 ```
 
-The line `> square 4` starting with a `>` is called a "watch expression", and Unison uses these watch expressions instead of having a separate read-eval-print-loop (REPL). The code you are editing can be run interactively, right in the same spot as you are doing the editing, with a full text editor at your disposal, with the same imports all in scope, all without needing to switch to a separate tool.
+The line `> square 4` starting with a `>` is called a "watch expression", and Unison uses these watch expressions instead of having a separate read-eval-print-loop (REPL). The code you are editing can be run interactively, right in the same spot as you are doing the editing, with a full text editor at your disposal, with the same definitions all in scope, without needing to switch to a separate tool.
 
 __Question:__ do we really want to reevaluate all watch expressions on every file save? What if they're expensive? Luckily, Unison keeps a cache of results for expressions it evaluates, keyed by the hash of the expression, and you can clear this cache at any time without ill effects. If a result for a hash is in the cache, Unison returns that instead of evaluating the expression again. So you can think of and use your `.u` scratch files a bit like spreadsheets, which only recompute the minimal amount when dependencies change.
 
@@ -266,7 +266,7 @@ This will test our function with a bunch of different inputs. Syntax notes:
 * `!expr` means the same thing as `expr ()`, we say that `!expr` _forces_ the delayed computation `expr`.
 * Note: there's nothing special about the names `tests.square.ex1` or `tests.square.prop1`; we could call those bindings anything we wanted. Here we just picked some uncreative names based on the function being tested. Use whatever naming convention you prefer.
 
-`nat` is imported from `test.v1` - `test.v1.nat`. It's a _generator_ of natural numbers. `!nat` generates one of these numbers.
+`nat` comes from `test.v1` - `test.v1.nat`. It's a _generator_ of natural numbers. `!nat` generates one of these numbers.
 
 The `square` function and the tests we've written for it are not yet part of the codebase. So far they only exists in our scratch file. Let's add it now. Switch to the Unison console and type `add`. You should get something like:
 
@@ -306,7 +306,7 @@ Now that we've added our `square` function to the codebase, how do we reference 
 
 The _Unison namespace_ is the mapping from names to definitions. Names in Unison look like this: `math.sqrt`, `.base.Int`, `base.Nat`, `base.Nat.*`, `++`, or `foo`. That is: an optional `.`, followed by one or more segments separated by a `.`, with the last segment allowed to be an operator name like `*` or `++`.
 
-We often think of these names as forming a tree, much like a directory of files, and names are like file paths in this tree. _Absolute_ names (like `.base.Int`) start with a `.` and are paths from the root of this tree and _relative_ names (like `math.sqrt`) are paths starting from the current namespace, which you can set using the `namespace` command:
+We often think of these names as forming a tree, much like a directory of files, and names are like file paths in this tree. [Absolute names](languagereference.html#absolutely-qualified-identifiers) (like `.base.Int`) start with a `.` and are paths from the root of this tree and _relative_ names (like `math.sqrt`) are paths starting from the current namespace, which you can set using the `namespace` command:
 
 ```
 .> namespace mylibrary
@@ -363,7 +363,7 @@ Also notice that we don't need to rerun our tests after this reshuffling. The te
 
 We get this for free because the test cache is keyed by the hash of the test, not by what the test is called.
 
-> ☝️  The `use` statement can do absolute imports as well, for instance `use .base.List map`.
+> ☝️  The `use` statement can do absolute names as well, for instance `use .base.List map`.
 
 When you're starting out writing some code, it can be nice to just put it in a temporary namespace, perhaps called `temp` or `scratch`. Later, without breaking anything, you can move that namespace or bits and pieces of it elsewhere, using the `move.term`, `move.type`, and `move.namespace` commands.
 

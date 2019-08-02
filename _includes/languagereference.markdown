@@ -2,7 +2,6 @@
 
 ## (Unison version 1.0.M1)
 
-
 This document is an informal reference for the Unison language, meant as an aid for Unison programmers as well as authors of implementations of the language.
 
 * This language reference, like the language it describes, is a work in progress and will be improved over time ([GitHub link](https://github.com/unisonweb/unison/blob/master/docs/LanguageReference.md)). Contributions and corrections are welcome!
@@ -28,16 +27,19 @@ A formal specification of Unison is outside the scope of this document, but link
     + [Reserved words](#reserved-words)
     + [Blocks and statements](#blocks-and-statements)
       - [The Lexical Syntax of Blocks](#the-lexical-syntax-of-blocks)
+      - [Syntactic precedence](#syntactic-precedence)
     + [Literals](#literals)
       - [Escape sequences](#escape-sequences)
     + [Comments](#comments)
     + [Type annotations](#type-annotations)
     + [Parenthesized expressions](#parenthesized-expressions)
     + [Function application](#function-application)
+      - [Syntactic precedence](#syntactic-precedence-1)
     + [Boolean expressions](#boolean-expressions)
       - [Conditional expressions](#conditional-expressions)
       - [Boolean conjunction and disjunction](#boolean-conjunction-and-disjunction)
     + [Delayed computations](#delayed-computations)
+      - [Syntactic precedence](#syntactic-precedence-2)
     + [Case expressions and pattern matching](#case-expressions-and-pattern-matching)
       - [Pattern matching](#pattern-matching)
         * [Blank patterns](#blank-patterns)
@@ -367,6 +369,14 @@ let x = 1
        x + y
 ```
 
+#### Syntactic precedence
+
+Keywords that introduce blocks bind more tightly than [function application](#function-application). So `f let x` is the same as `f (let x)` and `f if b then p else q` is the same as `f (if b then p else q)`.
+
+Block keywords bind more tightly than [delayed computations](#delayed-computation) syntax. So `'let x` is the same as `_ -> let x` and `!if b then p else q` is the same as `(if b then p else q) ()`.
+
+Blocks eagerly consume expressions, so `if b then p else q + r` is the same as `if b then p else (q + r)`.
+
 ### Literals
 A literal expression is a basic form of Unison expression. Unison has the following types of literals:
 
@@ -411,7 +421,7 @@ Any expression can appear in parentheses, and an expression `(e)` is the same as
 ### Function application
 A function application `f a1 a2 an` applies the function `f` to the arguments `a1` through `an`.
 
-The above syntax is valid where `f` is a [regular identifier](#identifiers). If the function name is an operator such as `*`, then the syntax for application is infix :  `a1 * a2`. Any operator can be used in prefix position by surrounding it in parentheses: `(*) a1 a2`. Any [regular identifier](#identifiers) can be used infix by surrounding it in backticks: ``a1 `f` a2``
+The above syntax is valid where `f` is a [regular identifier](#identifiers). If the function name is an operator such as `*`, then the syntax for application is infix :  `a1 * a2`. Any operator can be used in prefix position by surrounding it in parentheses: `(*) a1 a2`. Any [regular identifier](#identifiers) can be used infix by surrounding it in backticks: ``a1 `f` a2``.
 
 All Unison functions are of arity 1. That is, they take exactly one argument. An n-ary function is modeled either as a unary function that returns a further function (a partially applied function) which accepts the rest of the arguments, or as a unary function that accepts a tuple.
 
@@ -422,6 +432,15 @@ The evaluation semantics of function application is applicative order [Call-by-V
 An exception to the evaluation semantics is [Boolean expressions](#boolean-expressions), which have non-strict semantics.
 
 Unison performs [tail call elimination](https://en.wikipedia.org/wiki/Tail_call) at compile-time.
+
+
+#### Function application precedence
+
+Prefix function application:
+
+* Binds more tightly than infix operators. So `f x + g y` is the same as `(f x) + (g y)`.
+* Binds less tightly than keywords that introduce [blocks](#blocks-and-statements). So `f let x` is the same as `f (let x)` and `f if b then p else q` is the same as `f (if b then p else q)`
+* Binds less tightly than `'` and `!` (see [delayed computations](#delayed-computations)), so `'f x y` is the same as `(_ -> f) x y` and `!f x y` is the same as `f () x y`.
 
 ### Boolean expressions
 A Boolean expression has type `Boolean` which has two values, `true` and `false`.
@@ -455,9 +474,9 @@ A _Boolean disjunction expression_ is a `Boolean` expression of the form `or a b
 The evaluation semantics of `or a b` are equivalent to `if a then true else b`.
 
 ### Delayed computations
-An expression can appear _delayed_ as `'e`, which is the same as `_ -> e`. If `e` has type `T`, then `'e` has type `() -> T`.
+An expression can appear _delayed_ as `'e`, which is the same as `_ -> e`. If `e` has type `T`, then `'e` has type `forall a. a -> T`.
 
-If `c` is a delayed computation, it can be _forced_ with `!c`, which is the same as `c ()`. The expression `c` must have a type `() -> t` for some type `t`, in which case `!c` has type `t`.
+If `c` is a delayed computation, it can be _forced_ with `!c`, which is the same as `c ()`. The expression `c` must conform to a type `() -> t` for some type `t`, in which case `!c` has type `t`.
 
 Delayed computations are important for writing expressions that require [abilities](#abilities-and-ability-handlers). For example:
 
@@ -474,6 +493,19 @@ program = 'let
 This example defines a small I/O program. The type `{IO} ()` by itself is not allowed as the type of a top-level definition, since the `IO` ability must be provided by a handler, see [abilities and ability handlers](#abilities-and-ability-handlers)). Instead, `program` has the type `'{IO} ()` (note the `'` indicating a delayed computation). Inside a handler for `IO`, this computation can be forced with `!program`.
 
 Inside the program, `!readLine` has to be forced, as the type of `io.readLine` is `'{IO} Text`, a delayed computation which, when forced, reads a line from standard input.
+
+#### Syntactic precedence
+
+The reserved symbols `'` and `!` bind more tightly than function application, So `'f x` is the same as `(_ -> f) x` and `!x + y` is the same as `(x ()) + y`.
+
+These symbols bind less tightly than keywords that introduce blocks, so `'let x` is the same as `_ -> let x` and `!if b then p else q` is the same as `(if b then p else q) ()`.
+
+Additional `'` and `!` combine in the obvious way: 
+  * `''x` is the same as `(_ -> (_ -> x))` or `(_ _ -> x)`.
+  * `!!x` is the same as `x () ()`.
+  * `!'x` and `'!x` are both the same as `x`.
+
+You can of course use parentheses to precisely control how `'` and `!` get applied.
 
 ### Case expressions and pattern matching
 

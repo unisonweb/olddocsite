@@ -1,10 +1,10 @@
-# 3 minute quickstart guide
+# Three-minute quickstart guide
 
-This short guide will have you downloading and installing Unison and running your first program (a toy distributed mergesort implementation). There isn't much exposititon here and the focus here is on getting you up and running as quickly as possible. 🏎 
+This short guide will have you downloading and installing Unison and running your first program (a toy distributed mergesort implementation). There isn't much exposititon here and the focus is on getting you up and running as quickly as possible. 🏎 
 
 More in-depth guides follow this one.
 
-If you have any trouble with the process or ideas about how to improve this document, [come talk to us in the #alphatesting Slack channel][slack]! Also this document is [on GitHub][on-github].
+If you have any trouble with the process, or have ideas about how to improve this document, [come talk to us in the #alphatesting Slack channel][slack]! Also this document is [on GitHub][on-github].
 
 [slack]: https://join.slack.com/t/unisonlanguage/shared_invite/enQtNzAyMTQ4ODA0MDM4LWYxZTNkMGUxMDEzNTg3NTMxNjMxOGM2Zjg4ODFjM2RhNGY0OGU2NTMzYmQ1YWIwN2Y0YTc1NjQ1NjgzYzEzOWI
 [mac-dl]: https://github.com/unisonweb/unison/releases/download/untagged-daded0a07a0b3f5e9313/unison-osx
@@ -15,7 +15,7 @@ If you have any trouble with the process or ideas about how to improve this docu
 
 ### Step 1: Download Unison
 
-Download the `unison` executable for [Mac][mac-dl] or [Linux][linux-dl] and then (optional) add it to your path.
+Download the `unison` executable for [Mac][mac-dl] or [Linux][linux-dl] and then optionally add it to your path.
 
 ### Step 2: Create your Unison codebase
 
@@ -33,7 +33,7 @@ At the Unison `.>` prompt, before doing anything else, do:
 .> pull https://github.com/unisonweb/unisonbase.git
 ``` 
 
-to fetch a base library with the example you'll be running. You'll see some output from `git` in the background, and once that's done you can do:
+to fetch a base library with the first example. You'll see some output from `git` in the background, and once that's done you can do:
 
 ```
 .> edit quickstart.dsort
@@ -53,7 +53,7 @@ Open that file and add the following _watch expression_ (a line starting with `>
 
 You should see your watch expression evaluate to a sorted list. You are now up and running!
 
-_Disclaimer:_ This example is a toy that simulates execution locally and does no error handling. It's just meant to be suggestive of the general idea of being able to test Unison distributed programs locally (perhaps with simulated latency and failures injected) and then run them unchanged atop an actual elastic source of distributed compute! This _will_ be something you'll be able to do in Unison in not too long, see [the roadmap](roadmap.html).
+_Disclaimer:_ This example is a toy that simulates execution locally and does no error handling. It's just meant to be suggestive of the general idea of being able to test Unison distributed programs locally (perhaps with simulated latency and failures injected) and then run them unchanged atop an actual elastic source of distributed compute. This _will_ be something you'll be able to do in Unison in not too long (see [the roadmap](roadmap.html)).
 
 ### What next?
 

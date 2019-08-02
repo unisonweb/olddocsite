@@ -7,8 +7,8 @@ More in-depth guides follow this one.
 If you have any trouble with the process, or have ideas about how to improve this document, [come talk to us in the #alphatesting Slack channel][slack]! Also this document is [on GitHub][on-github].
 
 [slack]: https://join.slack.com/t/unisonlanguage/shared_invite/enQtNzAyMTQ4ODA0MDM4LWYxZTNkMGUxMDEzNTg3NTMxNjMxOGM2Zjg4ODFjM2RhNGY0OGU2NTMzYmQ1YWIwN2Y0YTc1NjQ1NjgzYzEzOWI
-[mac-dl]: https://github.com/unisonweb/unison/releases/download/untagged-daded0a07a0b3f5e9313/unison-osx
-[linux-dl]: https://github.com/unisonweb/unison/releases/download/untagged-daded0a07a0b3f5e9313/unison-linux64
+[mac-dl]: https://github.com/unisonweb/unison/releases/download/release%2FM1a/unison-osx
+[linux-dl]: https://github.com/unisonweb/unison/releases/download/release%2FM1a/unison-linux64
 [windows-dl]: todo
 [on-github]: https://github.com/unisonweb/docsite/edit/gh-pages/_includes/quickstart.markdown
 [guide]: unisontour.html
@@ -21,7 +21,7 @@ Download the `unison` executable for [Mac][mac-dl] or [Linux][linux-dl] and then
 
 Create a new directory, `unisoncode` (or any name you choose), then run the `unison` binary from within that directory. You'll see a note about "No codebase exists here so I'm initializing one..." and a welcome screen.
 
-<script id="asciicast-IYWfFwIgyl9Gilk3ZExvLfOjg" src="https://asciinema.org/a/IYWfFwIgyl9Gilk3ZExvLfOjg.js" data-speed="2" data-cols="65" async></script>
+<script id="asciicast-IYWfFwIgyl9Gilk3ZExvLfOjg" src="https://asciinema.org/a/IYWfFwIgyl9Gilk3ZExvLfOjg.js" data-speed="1.4" data-cols="65" async></script>
 
 ### Step 3: Fetch and run a distributed mergesort example
 
@@ -41,7 +41,7 @@ to fetch a base library with the first example. You'll see some output from `git
 
 to add the `dsort` distributed mergesort function to the top of a newly created _scratch file_, `scratch.u`:
 
-<script id="asciicast-o9lfrfetnmUT4ArqdDFMXZkr9" src="https://asciinema.org/a/o9lfrfetnmUT4ArqdDFMXZkr9.js" data-speed="2" data-rows="30" data-cols="65" async></script>
+<script id="asciicast-o9lfrfetnmUT4ArqdDFMXZkr9" src="https://asciinema.org/a/o9lfrfetnmUT4ArqdDFMXZkr9.js" data-speed="1.4" data-rows="30" data-cols="65" async></script>
 
 Open that file and add the following _watch expression_ (a line starting with `>`) to the top, then save the file:
 
@@ -49,7 +49,7 @@ Open that file and add the following _watch expression_ (a line starting with `>
 > runLocal '(quickstart.dsort (<) [8,2,3,1,4,5,6,7])
 ```
 
-<script id="asciicast-aTn8qIa3DHaxhspsZJmXodfO7" src="https://asciinema.org/a/aTn8qIa3DHaxhspsZJmXodfO7.js" data-speed="2" async></script>
+<script id="asciicast-aTn8qIa3DHaxhspsZJmXodfO7" src="https://asciinema.org/a/aTn8qIa3DHaxhspsZJmXodfO7.js" data-speed="1.4" data-t="1.5" data-autoplay="0" async></script>
 
 You should see your watch expression evaluate to a sorted list. You are now up and running!
 

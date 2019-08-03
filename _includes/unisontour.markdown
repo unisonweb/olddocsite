@@ -139,7 +139,7 @@ I found and typechecked these definitions in ~/Dropbox/projects/unison/scratch.u
 
   ⍟ These new definitions are ok to `add`:
 
-    square : Nat -> Nat
+    square : base.Nat -> base.Nat
 
 Now evaluating any watch expressions (lines starting with `>`)... Ctrl+C cancels.
 ```

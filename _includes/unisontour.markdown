@@ -163,12 +163,12 @@ And Unison replies:
 
 **unison**
 ```
-3 | > square 4
+6 | > square 4
       ⧩
       16
 ```
 
-The line `> square 4` starting with a `>` is called a "watch expression", and Unison uses these watch expressions instead of having a separate read-eval-print-loop (REPL). The code you are editing can be run interactively, right in the same spot as you are doing the editing, with a full text editor at your disposal, with the same definitions all in scope, without needing to switch to a separate tool.
+That `6 |` is the line number from the file. The `> square 4` on line 6 of the file, starting with a `>` is called a "watch expression", and Unison uses these watch expressions instead of having a separate read-eval-print-loop (REPL). The code you are editing can be run interactively, right in the same spot as you are doing the editing, with a full text editor at your disposal, with the same definitions all in scope, without needing to switch to a separate tool.
 
 __Question:__ do we really want to reevaluate all watch expressions on every file save? What if they're expensive? Luckily, Unison keeps a cache of results for expressions it evaluates, keyed by the hash of the expression, and you can clear this cache at any time without ill effects. If a result for a hash is in the cache, Unison returns that instead of evaluating the expression again. So you can think of and use your `.u` scratch files a bit like spreadsheets, which only recompute the minimal amount when dependencies change.
 

@@ -170,6 +170,8 @@ And Unison replies:
 
 That `6 |` is the line number from the file. The `> square 4` on line 6 of the file, starting with a `>` is called a "watch expression", and Unison uses these watch expressions instead of having a separate read-eval-print-loop (REPL). The code you are editing can be run interactively, right in the same spot as you are doing the editing, with a full text editor at your disposal, with the same definitions all in scope, without needing to switch to a separate tool.
 
+The `use .base` is a _wildcard use clause_. This lets us use anything from the `base` namespace under the root unqualified. For example we refer to `base.Nat` as simply `Nat`.
+
 __Question:__ do we really want to reevaluate all watch expressions on every file save? What if they're expensive? Luckily, Unison keeps a cache of results for expressions it evaluates, keyed by the hash of the expression, and you can clear this cache at any time without ill effects. If a result for a hash is in the cache, Unison returns that instead of evaluating the expression again. So you can think of and use your `.u` scratch files a bit like spreadsheets, which only recompute the minimal amount when dependencies change.
 
 > 🤓 There's one more ingredient that makes this work effectively, and that's functional programming. When an expression has no side effects, its result is deterministic and you can cache it as long as you have a good key to use for the cache, like the Unison content-based hash. Unison's type system won't let you do I/O inside one of these watch expressions or anything else that would make the result change from one evaluation to the next.
@@ -239,8 +241,6 @@ Save the file, and Unison comes back with:
 
 Some syntax notes:
 
-
-* `use test.v1` is a _wildcard use clause_. This lets us use anything from the `test.v1` namespace unqualified. For example we refer to `test.v1.run` as simply `run`.
 * The `test>` prefix tells Unison that what follows is a test watch expression. Note that we're also giving a name to this expression, `tests.square.ex1`.
 
 The `expect` function has type `Boolean -> Test`. It takes a `Boolean` expression and gives back a `Test`, which can be `run` to produce a list of test results, of type `[base.Test.Result]` (try `view base.Test.Result`). In this case there was only one result, and it was a passed test.

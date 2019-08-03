@@ -21,7 +21,7 @@ Using [vim-plug][vimplug]:
 From the console, run:
 
 ``` bash
-apm install unisonweb/atom-unison`
+apm install unisonweb/atom-unison
 ```
 
 ## VS Code

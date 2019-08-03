@@ -1,7 +1,7 @@
 # Set up your editor for Unison
 
 [githublink]: https://github.com/unisonweb/docsite/edit/gh-pages/_includes/editorsetup.markdown
-[vim]
+[vimplug]: https://github.com/junegunn/vim-plug
 
 This document is a collection of user-submitted instructions for setting up a text editor for Unison development. This document is [on github][githublink] and contributions are welcome!
 

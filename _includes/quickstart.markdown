@@ -31,7 +31,7 @@ brew install unison-language
 
 This will install the Unison codebase manager executable `ucm`.
 
-Note: if you get prompted for a GitHub username and password at this point, make sure you spelled the `brew tap` command correctly.
+Note: if you get prompted for a GitHub username and password at this point, make sure you spelled `unisonweb/unison` correctly.
 
 #### Option 2: Install manually
 

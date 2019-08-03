@@ -134,7 +134,7 @@ When you save the file, Unison replies:
 ```
 ✅
 
-I found and typechecked these definitions in ~/Dropbox/projects/unison/scratch.u. If you do an
+I found and typechecked these definitions in ~/unisoncode/scratch.u. If you do an
 `add` or `update` , here's how your codebase would change:
 
   ⍟ These new definitions are ok to `add`:
@@ -385,7 +385,7 @@ Instead of starting a function from scratch, often you just want to slightly mod
 .mylibrary> edit square
   ☝️
 
-  I added these definitions to the top of ~/scratch.u
+  I added these definitions to the top of ~/unisoncode/scratch.u
 
     square : .base.Nat -> .base.Nat
     square x =
@@ -417,7 +417,7 @@ sum = foldLeft (+) 0
 ```
 ✅
 
-I found and typechecked these definitions in ~/Dropbox/projects/unison/scratch.u. If you do an
+I found and typechecked these definitions in ~/unisoncode/scratch.u. If you do an
 `add` or `update` , here's how your codebase would change:
 
   ⍟ These new definitions will replace existing ones of the same name and are ok to `update`:

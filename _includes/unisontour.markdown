@@ -148,6 +148,8 @@ It typechecked the `square` function and inferred that it takes a natural number
 
 **scratch.u**
 ```
+use .base 
+
 square : Nat -> Nat
 square x = x * x
 
@@ -213,6 +215,8 @@ Let's add add a test for our `square` function:
 
 **scratch.u**
 ```
+use .base 
+
 square : Nat -> Nat
 square x = x * x
 
@@ -242,6 +246,8 @@ Let's test this a bit more thoroughly. `square` should have the property that `s
 
 **scratch.u**
 ```
+use .base
+
 square : Nat -> Nat
 square x = x * x
 

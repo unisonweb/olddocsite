@@ -402,7 +402,7 @@ This copies the pretty-printed definition of `square` into you scratch file "abo
 
 > Notice that Unison has put the correct type signature on `square`. The absolute names `.base.Nat` look a bit funny. We will often do `use .base` at the top of our file to refer to all the basic functions and types in `.base` without a fully qualified name.
 
-Let's edit `square` and instead define `square x` (just for fun) as the sum of the first `x` odd numbers (here's a [nice geometric illustration of why this gives the same results]):
+Let's edit `square` and instead define `square x` (just for fun) as the sum of the first `x` odd numbers (here's a [nice geometric illustration of why this gives the same results](https://math.stackexchange.com/a/639079)):
 
 **scratch.u**
 ```Haskell

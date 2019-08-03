@@ -382,7 +382,7 @@ When you're starting out writing some code, it can be nice to just put it in a t
 
 ## Modifying an existing definition
 
-Instead of starting a function from scratch, often you just want to slightly modify something that already exists. Here we'll make a trivial change to our `square` function. Try doing `edit square` from your prompt (note you can use tab completion):
+Instead of starting a function from scratch, often you just want to slightly modify something that already exists. Here we'll make a change to the implementation of our `square` function. Try doing `edit square` from your prompt (note you can use tab completion):
 
 ```
 .mylibrary> edit square
@@ -402,7 +402,7 @@ This copies the pretty-printed definition of `square` into you scratch file "abo
 
 > Notice that Unison has put the correct type signature on `square`. The absolute names `.base.Nat` look a bit funny. We will often do `use .base` at the top of our file to refer to all the basic functions and types in `.base` without a fully qualified name.
 
-Let's edit `square` and instead define `square x` (just for fun) as the sum of the first `x` odd numbers:
+Let's edit `square` and instead define `square x` (just for fun) as the sum of the first `x` odd numbers (here's a [nice geometric illustration of why this gives the same results]):
 
 **scratch.u**
 ```Haskell

@@ -118,11 +118,15 @@ Keep your `ucm` terminal running and open up a file, `scratch.u` (or `foo.u`, or
 
 **scratch.u**
 ```
+use .base
+
 square : Nat -> Nat
 square x = x * x
 ```
 
 This defines a function called `square`. It takes an argument called `x` and it returns `x` multiplied by itself.
+
+The first line, `use .base`, tells Unison that you want to use short names for the base libraries in this file (which allows you to say `Nat` instead of having to say `base.Nat`).
 
 When you save the file, Unison replies:
 

@@ -22,7 +22,7 @@ Note: This alpha release is for Mac OS X and 64-bit Linux only. Windows users, t
 
 First [install homebrew][homebrew] if you haven't already.
 
-Then from the command line enter these commands:
+Then from the command line enter these commands (or better yet, paste them into your console):
 
 ```
 brew tap unisonweb/unison
@@ -30,6 +30,8 @@ brew install unison-language
 ```
 
 This will install the Unison codebase manager executable `ucm`.
+
+Note: if you get prompted for a GitHub username and password at this point, make sure you spelled the `brew tap` command correctly.
 
 #### Option 2: Install manually
 

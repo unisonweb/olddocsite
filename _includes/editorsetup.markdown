@@ -11,9 +11,11 @@ Using [vim-plug][vimplug]:
 
 1. Install [vim-plug][vimplug] if you haven't already.
 2. Add the following to your .vimrc: 
+
         ``` vim
         Plug 'unisonweb/unison', { 'rtp': 'editor-support/vim' }
         ```
+
 3. Issue the vim command `:PlugInstall`.
 
 ## Atom

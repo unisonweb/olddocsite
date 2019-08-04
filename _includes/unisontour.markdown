@@ -62,8 +62,8 @@ __unison__
 
   base.List.reverse : [a] -> [a]
   base.List.reverse as =
-    use base.List cons
-    base.List.foldl (acc a -> cons a acc) [] as
+    use base.List +:
+    base.List.foldl (acc a -> a +: acc) [] as
 ```
 
 Here, we did a type-based search for functions of type `[a] -> [a]`, got a list of results, and then used the `view` command to look at the nicely formatted source code of one of these results. Let's introduce some Unison syntax:
@@ -74,7 +74,7 @@ Here, we did a type-based search for functions of type `[a] -> [a]`, got a list 
 * `base.List.reverse` takes one parameter, called `as`. The stuff after the `=` is called the _body_ of the function, and here it's a [block](languagereference.html#blocks-and-statements), which is demarcated by whitespace.
 * `acc a -> ..` is the syntax for an anonymous function.
 * Function arguments are separated by spaces and function application binds tighter than any operator, so `f x y + g p q` parses as `(f x y) + (g p q)`. You can always use parentheses to control grouping more explicitly.
-* The declaration `use base.List cons` lets us reference `base.List.cons` using just `cons`. [Use clauses](languagereference.html#use-clauses) like this can be placed in any Unison block; they don't need to go at the top of your file.
+* The declaration `use base.List +:` lets us reference the function `base.List.+:` using just `+:`. (This function prepends an element to the front of a list.) [Use clauses](languagereference.html#use-clauses) like this can be placed in any Unison block; they don't need to go at the top of your file.
 
 > Try doing `view base.List.foldl` if you're curious to see how it's defined.
 
@@ -93,8 +93,8 @@ Let's try this out. `reverse` is defined using `List.foldl`, where `l` is a need
 
   base.List.reverse : [a] -> [a]
   base.List.reverse as =
-    use base.List cons
-    base.List.foldLeft (acc a -> cons a acc) [] as
+    use base.List +:
+    base.List.foldLeft (acc a -> a +: acc) [] as
 ```
 
 Notice that `view` shows the `foldLeft` name now, so the rename has taken effect. Nice!

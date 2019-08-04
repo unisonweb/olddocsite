@@ -227,7 +227,7 @@ square x = x * x
 
 use test.v1
 
-test> tests.square.ex1 = run (expect (4 == 16))
+test> tests.square.ex1 = run (expect (square 4 == 16))
 ```
 
 Save the file, and Unison comes back with:

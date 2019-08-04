@@ -172,8 +172,9 @@ The left-hand side is the data type being defined. It gives a name for the data 
 
 The right-hand side consists of zero or more data constructors separated by `|`. These are _data constructors_ for the type, or ways in which values of the type can be constructed. Each case declares a name for a data constructor (here the data constructors are `None` and `Some`), followed by the **types** of the arguments to the constructor.
 
-When Unison compiles a type definition, it generates a term for each data constructor. Here they are the terms `Some : a -> Optional a`, and `None : Optional a`. It also generates _patterns_ for matching on data 
-(see [Pattern Matching](#pattern-matching)).
+When Unison compiles a type definition, it generates a term for each data constructor. Here they are the terms `Optional.Some : a -> Optional a`, and `Optional.None : Optional a`. It also generates _patterns_ for matching on data (see [Pattern Matching](#pattern-matching)).
+
+Note that these terms and patterns receive qualified names: if the type named `x.y.Z` has a data constructor `C`, the generated term and pattern for `C` will be named `x.y.Z.C`.
 
 The general form of a type declaration is as follows:
 

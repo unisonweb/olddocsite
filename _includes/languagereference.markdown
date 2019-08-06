@@ -8,6 +8,8 @@ This document is an informal reference for the Unison language, meant as an aid 
 
 A formal specification of Unison is outside the scope of this document, but links are provided to resources that describe the language’s formal semantics.
 
+[abilities]: abilities.html
+
 ## Table of contents
 
   * [A note on syntax](#a-note-on-syntax)
@@ -791,6 +793,8 @@ Unison provides a system of _abilities_ and _ability handlers_ as a means of mod
 Unison is a purely functional language, so no expressions are allowed to have _side effects_, meaning they are evaluated to a result and nothing else. But we still need to be able to write programs that have _effects_, for example writing to disk, communicating over a network, generating randomness, looking at the clock, and so on. Ability types are Unison's way of allowing an expression to request effects it would like to have. Handlers then interpret those requests, often by translating them in turn to a computation that uses the built-in `IO` ability. Unison has a built-in handler for the `IO` ability which cannot be invoked in Unison programs (it can only be invoked by the Unison runtime). This allows Unison to provide I/O effects in a purely functional setting. See [input and output](#input-and-output) for details on the `IO` ability.
 
 Unison's system of abilities is based on the Frank language by Sam Lindley, Conor McBride, and Craig McLaughlin (https://arxiv.org/pdf/1611.09259.pdf). Unison diverges slightly from the scheme detailed in this paper. In particular, Unison's ability polymorphism is provided by ordinary polymorphic types, and a Unison type with an empty ability set explicitly disallows any abilities. In Frank, the empty ability set implies an ability-polymorphic type.
+
+If this is your first introduction to abilities, then take a look at this more long-form [tutorial][abilities].
 
 ### Abilities in function types
 

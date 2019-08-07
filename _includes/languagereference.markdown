@@ -16,8 +16,9 @@ A formal specification of Unison is outside the scope of this document, but link
       - [Type signature](#type-signature)
       - [Term definition](#term-definition)
     + [User-defined data types](#user-defined-data-types)
+      + [Unique types](#unique-types)
+      + [Record types](#record-types)
     + [User-defined abilities](#user-defined-abilities)
-    + [Unique types](#unique-types)
     + [Use clauses](#use-clauses)
   * [Unison expressions](#unison-expressions)
     + [Identifiers](#identifiers)
@@ -233,6 +234,42 @@ unique[direction_PWOxXSDnUkKOJttYCZTQ3Q] type
 ```
 
 The unique identifier must be a valid [regular identifier](#identifiers). It's a good idea to use a UUID generator to generate these for you to ensure that they are unique.
+
+#### Record types
+
+In the type declarations discussed above, the arguments to each data constructor are nameless.  For example:
+
+``` haskell
+type Point = Point Nat Nat
+```
+
+Here, the data type `Point` has a constructor `Point.Point`, with two arguments, both of type `Nat`.  The arguments have no name, so they are identified positionally, for example when creating a value of this type, like `Point.Point 1 2`.
+
+Types with a single data constructor can also be defined in the following style, in which case they are called _record types_.  
+
+``` haskell
+type Point = { x : Nat, y : Nat }
+```
+
+This assigns names to each argument of the constructor.  The effect of this is to generate some accessor methods, to help get, set, and modify each field.
+
+``` haskell
+Point.x        : Point -> Nat
+Point.x.modify : (Nat -> Nat) -> Point -> Point
+Point.x.set    : Nat -> Point -> Point
+Point.y        : Point -> Nat
+Point.y.modify : (Nat -> Nat) -> Point -> Point
+Point.y.set    : Nat -> Point -> Poin
+```
+
+> 👉 Note that `set` and `modify` are returning new, modified copies of the input record - there's no mutation of values in Unison.  
+
+There's currently no special syntax for creating or pattern matching on records.  That works the same as for regular data types:
+``` haskell
+p = Point.Point 1 2
+px = case p of
+       Point.Point x _ -> x
+```
 
 ### User-defined abilities
 

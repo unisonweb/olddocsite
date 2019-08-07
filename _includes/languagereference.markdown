@@ -130,28 +130,28 @@ The above defines a function `sumUpTo` that recursively sums all the natural num
 Note: The expression `drop n 1` on line 4 above subtracts one from the natural number `n`. Since the natural numbers are not closed under subtraction (`n - 1` is an `Int`), we use the operation `drop` which has the convention that `drop 0 n = 0` for all natural numbers `n`. Unison's type system saves us from having to deal with negative numbers here.
 
 #### Operator definitions
-[Operator identifiers](#identifiers) are valid names for Unison definitions, but the syntax for defining them is slightly different. For example, we could define a binary operator `?`:
+[Operator identifiers](#identifiers) are valid names for Unison definitions, but the syntax for defining them is slightly different. For example, we could define a binary operator `|`:
 
 ``` Haskell
-(?) x y = if x == 0 then y else x 
+(|) x y = if x == 0 then y else x 
 ```
 
 Or we could define it using infix notation:
 
 ``` haskell
-x ? y = if x == 0 then y else x
+x | y = if x == 0 then y else x
 ```
 
 If we want to give the operator a qualified name, we put the qualifier inside the parentheses:
 
 ``` Haskell
-(MyNamespace.?) x y = if x == 0 then y else x 
+(MyNamespace.|) x y = if x == 0 then y else x 
 ```
 
 Or if defining it infix:
 
 ``` haskell
-x MyNamespace.? y = if x == 0 then y else x
+x MyNamespace.| y = if x == 0 then y else x
 ```
 
 The operator can be applied using either notation, no matter which way it's defined. See [function application](#function-application) for details.

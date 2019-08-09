@@ -99,19 +99,124 @@ ability SystemTime where
 
 Note the ability list that's appeared in the request signature.  Just as `tomorrow` has this ability in its signature, which therefore propagates to up to `foo` (in the example from the previous section), so `systemTime` did even beforehand, and it was this which propagated to `tomorrow` in the first place.  
 
-The reason we can omit the name of the ability being defined from its requests' signatures is that, logically, it always needs to be there.  So we say it 'goes without saying', which saves us a bit of syntactic noise.
+The reason we can omit the name of the ability being defined from its requests' signatures is that, logically, it always needs to be there - using an ability's request requires that ability.  So as far as Unison is concerned, this bit of an ability's type signature 'goes without saying'.  You can write it either way.  
 
-> 🤔 An ability declaration is the only place you'll see an ability list in a signature that doesn't follow the rule that 'ability requests exist in the context of a function processing one of its arguments' - i.e. the only place you can have a `{SystemTime}` not following a `->`.
+> 🤔 An ability declaration is the only place you'll see an ability list in a signature that doesn't follow the rule that 'ability requests exist in the context of a function processing one of its arguments' - i.e. the only place you can have a `{SystemTime}` not following a `->` or a `'`.
 
 ### Examples of abilities
 
--- IO (sidebar on why it's special; idea of one ability implemented in terms of another), control flow (Abort, Send/Receive), at least some of: State/Store, Console IO, abilities with type parameters, abilities that are just sets of commands to emit, random/choice. Comment about effects with pure handlers.
+#### `Store`
 
--- Backing up the motivation, giving the picture of how programs should end up looking in the large (or later)
+The following ability lets us write programs that have access to mutable state.
+
+``` haskell
+ability Store v where
+  get : v
+  put : v -> ()
+```
+
+💡 Notice that this ability has a type parameter, `v`.  Abilities can have these, just like type declarations can.  
+
+The `Store` ability can be implemented using handlers, even though Unison does not offer mutable state as a language primitive - we'll see the implementation later.  
+
+Here's an example, using `Store` to help label a binary tree with numerical indices, in left-to-right ascending order.
+
+``` haskell
+type Tree a = Branch (Tree a) a (Tree a) | Leaf
+
+labelTree : Tree a ->{Store .base.Nat} Tree (a, .base.Nat)
+labelTree t =
+  use Tree Branch Leaf
+  case t of
+    Branch l v r ->
+      use .base.Nat +
+      l' = labelTree l
+      n = Store.get
+      Store.put (n + 1)
+      r' = labelTree r
+      Branch l' (v, n) r'
+    Leaf -> Leaf
+```
+
+#### `IO`
+
+The main reason for having abilities is to give our programs a way of having an effect on the world outside the program.  There is a special ability, called `IO` (for Input/Output), which lets us do this.  It's built into the language and runtime, so it's not defined and implemented in the normal way, but we can take a look at its ability declaration.
+
+``` haskell
+.base.io> view IO
+
+  ability IO where
+    send_ :
+      Socket
+      -> base.Bytes
+      ->{IO} base.Either Error base.()
+    getLine_ :
+      Handle ->{IO} base.Either Error base.Text
+    openFile_ :
+      FilePath
+      -> Mode
+      ->{IO} base.Either Error Handle
+    throw : Error ->{IO} a
+    fork_ :
+      '{IO} a ->{IO} base.Either Error ThreadId
+    systemTime_ : {IO} (base.Either Error EpochTime)
+
+    -- ... and many more requests, omitted here for brevity.
+```
+
+The `IO` ability spans many different types of I/O - the snippet above shows sockets, files, exceptions, and threads, as well as the system clock.  
+
+> Typically you access these requests via the helper functions in the `.base.io` namespace, e.g. `.base.IO.systemTime : '{IO} EpochTime`.
+
+So, since all the ways in which we can interact with the world are captured in the `IO` ability, why do we ever need any other abilities?  There are several reasons.
+1. We don't want to write all our code in terms of low-level concepts like files and threads.  We want higher-level abstractions, for example persistent distributed stores for typed data, and stream-based concurrency.  The low-level stuff is what we're used to from traditional programming environments, but we want to hide it behind powerful libraries, written in Unison, that expose better abstractions.  
+2. We don't want `{IO}` to feature too often in the type signatures of the functions we write, because it doesn't tell us much.  Since `IO` contains so many different types of I/O, it leaves the behavior of our functions very unconstrained.  We want to use our type signatures to document and enforce the abiity requirements of our functions in a more fine-grained way.  For instance, it's useful that we know, just by looking at its signature, that `tomorrow : '{SystemTime} .base.Nat` isn't going to write to file or open a socket.  If we instead had `tomorrow : '{IO} .base.Nat`, then we'd have no such guarantee, without going and inspecting the code.  
+3. Some things can be expressed well using abilities, but *don't* require interaction with the outside world. `Store` is an example.  
+
+This leads us to a common pattern: 
+
+👉 Typically, one ability is implemented by building on top of another.  And often, when we get down to the bottom of the pile, we'll find `IO`.  
+
+For example, the handler for our `SystemTime` ability is going to require the `IO` ability, and it's going to call `.base.io.systemTime`.
+
+In terms of the architecture of our programs, this typically means that the top level entry points for our 'business logic' are annotated with all the fine-grained abilities our program can use, like this:
+
+``` haskell
+placeOrder : Order ->{Database, Log, TimeService, AuthService} OrderConfirmation
+```
+
+And then we have one or more functions to wrap that logic, invoking handlers to collapse the signature down to one using only `IO`, like this:
+
+``` haskell
+orderServer : ServerConfig ->{IO} ()
+```
+
+> ##### Executing a Unison program
+> 
+> Here's the help for `ucm`'s `execute` command.
+> ```
+> .> help execute
+> 
+>   `execute foo` evaluates the Unison expression `foo` of type `()` with access to the `IO` ability.
+> ```
+>
+> This shows us that we *need* to collapse our functions down to something like `orderServer`, so Unison knows how to run them.  
+>
+> ⚙️ Interestingly, you can define your own handler for `IO`!  (In theory this includes using the 'real' `IO` from within your handler, but note Unison issue [#697](https://github.com/unisonweb/unison/issues/697)).
+
+#### `Abort`
+
+TODO i.e. demonstrating that abilities can affect control flow
+
+Maybe do choice/nondeterminism as well?
 
 ### More on abilities in type signatures
 
 TODO somewhere that detail about {A} X being a subtype of X.
+
+TODO abilities can be inferred even where a type signature is given.  Surprise about them being inferred as concrete effects, ticket 691.
+
+TODO abilities only mattering on signatures for lambdas (see slack discussion and ability typechecking doc)
 
 #### Ability lists on each argument
 
@@ -148,3 +253,7 @@ Tail position
 Being able to use the continuation 0 or 2+ times.  
 [Performance/implementation/optimization futures?]
 ...
+
+## Recap - worked example
+
+TODO Maybe Send/Receive + Log ?

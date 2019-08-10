@@ -138,9 +138,13 @@ labelTree t =
     Leaf -> Leaf
 ```
 
+💡 Observe how the first branch of the `case` statement includes four side-effecting statements - the two lines with recursive calls to `labelTree`, and the lines in between.  Unison supports these *blocks* of statements, and handles the statements in sequence, because order of execution is important when running side-effecting code.  Note that the last line is in this case a non-side-effecting expression - the value of the block is just the value of this final expression.
+
+> Note, the `'` in the identifiers `l'` and `r'` here are just part of the names - nothing to do with delay syntax this time.
+
 #### `IO`
 
-The main reason for having abilities is to give our programs a way of having an effect on the world outside the program.  There is a special ability, called `IO` (for Input/Output), which lets us do this.  It's built into the language and runtime, so it's not defined and implemented in the normal way, but we can take a look at its ability declaration.
+The main reason for having abilities is to give our programs a way of having an effect on the world outside the program.  There is a special ability, called `IO` (for 'Input/Output'), which lets us do this.  It's built into the language and runtime, so it's not defined and implemented in the normal way, but we can take a look at its ability declaration.
 
 ``` haskell
 .base.io> view IO
@@ -201,14 +205,64 @@ orderServer : ServerConfig ->{IO} ()
 > ```
 >
 > This shows us that we *need* to collapse our functions down to something like `orderServer`, so Unison knows how to run them.  
->
-> ⚙️ Interestingly, you can define your own handler for `IO`!  (In theory this includes using the 'real' `IO` from within your handler, but note Unison issue [#697](https://github.com/unisonweb/unison/issues/697)).
 
-#### `Abort`
+#### `Log`
 
-TODO i.e. demonstrating that abilities can affect control flow
+TODO - to demonstrate the wide class of 'issue some commands' abilities
+comment that most use of abilities is emitting data out to the world, or getting some back.
 
-Maybe do choice/nondeterminism as well?
+#### `Abort` and `Exception`
+
+The `Abort` ability lets us write programs which can terminate early.  This is our first example of the following:
+
+👉 Abilities can affect the program's control flow. 
+
+``` haskell
+ability Abort where
+  abort : a
+```
+
+Here's `Abort` in action:
+
+``` haskell
+use .base
+
+getName : Input ->{Abort} Text
+getName i = name = if not (valid i)
+                   then Abort.abort
+                   else extract "name" i
+            canonicalName name
+
+handleInput : Input ->{Abort} ()
+handleInput i = name = getName i
+                handleRequest name i
+```
+
+If we hit the `not (valid i)` error case inside `getName`, then we call `Abort.abort` and exit immediately.  Execution resumes from after the first enclosing `Abort` handler.  So, in this case, we exit both `getName` and `handleInput` immediately, since there's no handler in between the two.
+
+> Note that the `abort` request has polymorphic type, `abort : a`.  This means it can be used in any context, and still typecheck.  It doesn't actually need to be able to return an `a`, because computation is not going to contine after the call to `abort`.  In `getName`, `abort` is being used where a `Text` is required, so `a` is instantiated to `Text`.  
+
+There's a variant of `Abort`, which lets you provide a value to describe what's happened - this is analogous to the exception handling provided in some other languages.  
+
+``` haskell
+ability Exception e where
+  throw : e -> a
+```
+
+😎 The ability mechanism is sufficiently general and powerful that what might otherwise be a whole separate single-purpose language feature, exception handling, instead becomes a few lines of library code.  Isn't that cool??
+
+#### `Choice`
+
+Here's another example - shown here to demonstrate further the idea of an ability affecting control flow.  
+
+``` haskell
+ability Choice where
+  choose : .base.Boolean
+```
+
+There's a handler for this ability (which we'll see later), which gives the program not just one Boolean value after a call to `choose`, but both.  It then tries continuing the program under *both* conditions.  Each successive call to `choose` is a fork in the tree of possibilities.  The handler collects all the results from all the possible execution paths.  
+
+This trick can be neat for exhaustively exploring a space of possibilities, for example to optimize some decision.  
 
 ### More on abilities in type signatures
 
@@ -253,6 +307,10 @@ Tail position
 Being able to use the continuation 0 or 2+ times.  
 [Performance/implementation/optimization futures?]
 ...
+
+> ⚙️ Interestingly, you can define your own handler for `IO`!
+
+proxy handler pattern
 
 ## Recap - worked example
 

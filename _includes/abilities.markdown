@@ -2,6 +2,10 @@
 
 TODO: doc purpose and context
 
+TODO: collect all the examples in a code repo
+
+TODO: exercises?
+
 [langref]: languagereference.html
 
 See also [this][langref#abilities-and-ability-handlers].
@@ -208,14 +212,22 @@ orderServer : ServerConfig ->{IO} ()
 
 #### `Log`
 
-TODO - to demonstrate the wide class of 'issue some commands' abilities
-comment that most use of abilities is emitting data out to the world, or getting some back.
+Here's an example of an ability to let us append text to a log - for example a log file kept on disk.
+
+``` haskell
+ability Log where
+  log : .base.Text -> ()
+```
+
+You could imagine the handler decorating the text with timestamps and other useful contextual information.  
+
+The `Log` ability is typical of the class of abilities which let the program emit a sequence of data or commands.  The information flow is purely *out* of the program using the ability.  Contrast this with the `Store` and `IO` abilities, in which the flow of information is two-way, both in and out of the program.  
+
+Most abilities are concerned with emitting and/or receiving data from/to the program.  However, abilities can do more than that: they can affect the program's control flow in ways that a regular function can't, as shown in the next example.  
 
 #### `Abort` and `Exception`
 
-The `Abort` ability lets us write programs which can terminate early.  This is our first example of the following:
-
-👉 Abilities can affect the program's control flow. 
+The `Abort` ability lets us write programs which can terminate early.  
 
 ``` haskell
 ability Abort where
@@ -238,7 +250,7 @@ handleInput i = name = getName i
                 handleRequest name i
 ```
 
-If we hit the `not (valid i)` error case inside `getName`, then we call `Abort.abort` and exit immediately.  Execution resumes from after the first enclosing `Abort` handler.  So, in this case, we exit both `getName` and `handleInput` immediately, since there's no handler in between the two.
+Suppose we're running `handleInput`, and we hit the `not (valid i)` error case inside `getName`: then we call `Abort.abort` and exit immediately.  Execution resumes from after the first enclosing `Abort` handler.  So, in this case, we exit both `getName` and `handleInput` immediately, since there's no handler in between the two.
 
 > Note that the `abort` request has polymorphic type, `abort : a`.  This means it can be used in any context, and still typecheck.  It doesn't actually need to be able to return an `a`, because computation is not going to contine after the call to `abort`.  In `getName`, `abort` is being used where a `Text` is required, so `a` is instantiated to `Text`.  
 
@@ -266,24 +278,72 @@ This trick can be neat for exhaustively exploring a space of possibilities, for 
 
 ### More on abilities in type signatures
 
-TODO somewhere that detail about {A} X being a subtype of X.
+#### Pure functions vs inferred abilities
 
-TODO abilities can be inferred even where a type signature is given.  Surprise about them being inferred as concrete effects, ticket 691.
+Empty ability lists are used for declaring pure functions.  For example:
+
+``` haskell
+inverse : Matrix ->{} Matrix
+```
+
+The typechecker then enforces that `inverse` does not require any abilities.  
+
+👉 The type `A ->{} B` is different from the type `A -> B`.
+
+The former is the type of a pure function.  The latter is asking for the ability list to be inferred by the Unison type-checker.  
+
+👉 The type `A -> B` doesn't mean 'no abilities', but rather that Unison will determine the ability list itself.  
+
+This is an important distinction, and easy to forget, because the signature `A -> B` doesn't contain any visual cues to think about abilities.  
+
+We'll learn more about the ability inference mechanism shortly, in [ability inference and generalization](#ability-inference-and-generalization).
+
+#### Ability lists can appear before each function argument
+
+So far we've seen functions whose types include one ability list, like so:
+
+``` haskell
+orderServer : ServerConfig ->{IO} ()
+```
+But the following is also possible:
+
+``` haskell
+orderServer' : ServerConfig ->{Log} '{IO} ()
+```
+
+> 🐘 This type signature is equivalent to `ServerConfig ->{Log} () ->{IO} ()`.
+
+`orderserver'` is a function which, when partially applied to its first (`ServerConfig`) argument, can produce log messages, before finally yielding a function of type `'{IO} ()`.  That second function can then be forced, i.e. applied to `()`, to actually carry out some `IO`.  
+
+The first application requires (only) the `Log` ability, and the second requires (only) the `IO` ability.  This is a useful distinction.  In this case, it tells us we can set up an order server, involving inspecting some configuration, in a computation that does some logging but is otherwise pure.  Only the second stage might do unrestricted `IO`.  
+
+It's useful to keep the following in mind when reading type signatures.  
+
+👉 Every `->` and `'` has an ability list `{…}` logically attached to it, describing the abilities required for applying the function to the preceding argument.  
+
+'Logically', because as we've seen, the `{…}` can be left unspecified when writing code, to ask Unison to infer what it should say.  This process is described in the next section.  
+
+#### Ability inference and generalization
+
+TODO inc mentioning ability variables like `A ->{𝕖} B`.
+
+TODO emphasise abilities can be inferred even where a type signature is given.  Surprise about them being inferred as concrete effects, ticket 691.
+
+beware #703
+
+TODO somewhere that detail about {A} X being a subtype of X, so beware ascribing your own ability signatures - where can you put too many abilities and it pass OK? 
+
+#### Higher-order functions and ability polymorphism
+
+TODO
+
+i.e. why it's useful to have ability variables
+
+#### Enclosing lambdas  TODO fix title
 
 TODO abilities only mattering on signatures for lambdas (see slack discussion and ability typechecking doc)
 
-#### Ability lists on each argument
-
-TODO
---including thinking of the {} as joined to the ->
-
-#### Pure functions
-
-TODO
-
-#### Higher-order functions, ability polymorphism, and ability inference
-
-TODO
+not getting confused when interpreting local definition signatures
 
 ## Invoking handlers
 

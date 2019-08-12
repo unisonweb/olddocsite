@@ -31,7 +31,7 @@ ability SystemTime where
   systemTime : .base.Nat
 ```
 
-It defines one *request*, `systemTime`, which returns the clock reading.  We'll come back to the term 'request' later.  
+It defines one **request**, `systemTime`, which returns the clock reading.  We'll come back to the term 'request' later.  
 
 TODO/question: should I use the word 'request' or 'ability constructor' (or 'method', which I'd prefer...)
 
@@ -73,7 +73,7 @@ tomorrow : '{SystemTime} .base.Nat
 
 > 🐞 You may see a `∀` in the signature, due to Unison issue #689.
 
-The `{SystemTime}` is an *ability list* - in this case a list of just one ability.  It's saying that `tomorrow` _requires_ the `SystemTime` ability - that ability needs to be available in functions that call `tomorrow`.  And it's also saying that the `SystemTime` ability is available for use within the definition of `tomorrow` itself.  
+The `{SystemTime}` is an **ability list** - in this case a list of just one ability.  It's saying that `tomorrow` _requires_ the `SystemTime` ability - that ability needs to be available in functions that call `tomorrow`.  And it's also saying that the `SystemTime` ability is available for use within the definition of `tomorrow` itself.  
 
 Suppose you're writing a function `foo` which should call `tomorrow`.  There are two ways of making the `SystemTime` ability available:
 1. Put an ability list containing `SystemTime` in the signature of `foo`, the same as with the signature of `tomorrow`.  Indeed, if you leave the signature of `foo` unspecified, this ability list will be inferred again.  In this way the `SystemTime` requirement propagates up the function call graph.  
@@ -142,7 +142,7 @@ labelTree t =
     Leaf -> Leaf
 ```
 
-💡 Observe how the first branch of the `case` statement includes four side-effecting statements - the two lines with recursive calls to `labelTree`, and the lines in between.  Unison supports these *blocks* of statements, and handles the statements in sequence, because order of execution is important when running side-effecting code.  Note that the last line is in this case a non-side-effecting expression - the value of the block is just the value of this final expression.
+💡 Observe how the first branch of the `case` statement includes four side-effecting statements - the two lines with recursive calls to `labelTree`, and the lines in between.  Unison supports these **blocks** of statements, and handles the statements in sequence, because order of execution is important when running side-effecting code.  Note that the last line is in this case a non-side-effecting expression - the value of the block is just the value of this final expression.
 
 > Note, the `'` in the identifiers `l'` and `r'` here are just part of the names - nothing to do with delay syntax this time.
 
@@ -288,11 +288,11 @@ inverse : Matrix ->{} Matrix
 
 The typechecker then enforces that `inverse` does not require any abilities.  
 
-👉 The type `A ->{} B` is different from the type `A -> B`.
+👉 The signature `A ->{} B` is different from the signature `A -> B`.
 
-The former is the type of a pure function.  The latter is asking for the ability list to be inferred by the Unison type-checker.  
+The former is the type of a pure function.  When you write the latter, you're asking for the ability list to be inferred by the Unison type-checker.  
 
-👉 The type `A -> B` doesn't mean 'no abilities', but rather that Unison will determine the ability list itself.  
+👉 On code that you write, the signature `A -> B` doesn't mean 'no abilities', but rather that Unison will determine the ability list itself.  
 
 This is an important distinction, and easy to forget, because the signature `A -> B` doesn't contain any visual cues to think about abilities.  
 
@@ -317,6 +317,9 @@ orderServer' : ServerConfig ->{Log} '{IO} ()
 
 The first application requires (only) the `Log` ability, and the second requires (only) the `IO` ability.  This is a useful distinction.  In this case, it tells us we can set up an order server, involving inspecting some configuration, in a computation that does some logging but is otherwise pure.  Only the second stage might do unrestricted `IO`.  
 
+See [enclosing lambdas](#enclosing-lambdas) for how to _define_ a function like `orderServer'`.
+TODO fix link
+
 It's useful to keep the following in mind when reading type signatures.  
 
 👉 Every `->` and `'` has an ability list `{…}` logically attached to it, describing the abilities required for applying the function to the preceding argument.  
@@ -325,25 +328,72 @@ It's useful to keep the following in mind when reading type signatures.
 
 #### Ability inference and generalization
 
-TODO inc mentioning ability variables like `A ->{𝕖} B`.
+Unison can do two levels of type inference for you.  The first is to infer the complete signature of your definition.
 
-TODO emphasise abilities can be inferred even where a type signature is given.  Surprise about them being inferred as concrete effects, ticket 691.
+``` haskell
+retries = 3
+-- inferred type: .base.Nat
+```
 
-beware #703
+The second is to infer ability lists, wherever you have left them unspecified.  
 
-TODO somewhere that detail about {A} X being a subtype of X, so beware ascribing your own ability signatures - where can you put too many abilities and it pass OK? 
+```haskell
+use .base
 
-#### Higher-order functions and ability polymorphism
+incrementP : Nat -> Nat
+incrementP x = io.printLine "incrementP"
+               x + 1
+-- inferred type: Nat ->{io.IO} Nat               
+```
 
-TODO
+Unison can see, from the use of `io.printLine`, that `incrementP` requires the `IO` ability.  
 
-i.e. why it's useful to have ability variables
+🚧 It's arguably surprising that Unison may infer a concrete ability for a function for which you provided a `Nat -> Nat` signature.  In future Unison will emit a message to say that it's done this.  ([#717](https://github.com/unisonweb/unison/issues/717))
+
+When you do `add incrementP`, Unison will report the actual inferred type, `Nat ->{io.IO} Nat`.
+
+So what does a plain `->` or `'` mean, when you see it after doing an `add`?  In this context it *does* mean a pure function - it's equivalent to `->{}` or `'{}`.
+
+👉 When you *give* Unison a plain `->` or `'` (with no `{…}`) you're asking it to infer some abilities.  When Unison gives *you* a plain `->` or `'`, it means `->{}` or `'{}`.
+
+So in particular, this means that if you type `->{}`, Unison can render it back to you as just `->`.  
+
+> 🐞 Note, Unison can currently sometimes fail to output its inferred abilities when you do `view` or `edit` (although it does correctly output them at the `ucm` command line when you typecheck your code or do `add`/`update`.)  This is due to Unison issue [#703](https://github.com/unisonweb/unison/issues/703).  However, it will re-run its inference again when you next add the code.
+
+##### Higher-order functions and ability polymorphism
+
+Here's how Unison infers the type of `.base.List.map`, a higher-order function:
+
+``` haskell
+base.List.map : (a -> b) -> [a] -> [b]
+-- inferred type: (a ->{𝕖} b) -> [a] ->{𝕖} [b]
+```
+
+It's added ability lists including a type variable, `𝕖`, in a process called **ability generalization**.  This is saying that, whatever the required abilities of the input function, the overall invocation of `map` will have the same requirements.
+
+So for example, `'(base.List.map base.io.printLine ["Hello", "world!"])` has type `'{IO} [()]` - it requires `IO`, because it calls `printLine` which requires `IO`.  
+
+We say that `base.List.map` is **ability polymorphic**: even though the function itself is in a sense pure, it can be used in a side-effecting way, depending on the ability requirements of its argument.  
+
+The generalization process can work in tandem with inferring concrete abilities - for example:
+
+``` haskell
+applyP f x = .base.io.printLine "applyP"
+             f x
+-- inferred type: (i ->{𝕖, .base.io.IO} o) -> i ->{𝕖, .base.io.IO} o
+```
+
+This is saying that `applyP` requires `IO`, combined with whatever other abilities (`𝕖`) are required by its first argument.  (The combination process is a set union, so if `𝕖` also includes `IO`, then `IO` still only appears once in the resulting type.)
 
 #### Enclosing lambdas  TODO fix title
 
 TODO abilities only mattering on signatures for lambdas (see slack discussion and ability typechecking doc)
 
 not getting confused when interpreting local definition signatures
+
+TODO somewhere that detail about {A} X being a subtype of X, so beware ascribing your own ability signatures - where can you put too many abilities and it pass OK? 
+
+how to define orderServer'
 
 ## Invoking handlers
 

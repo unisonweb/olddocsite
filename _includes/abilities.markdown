@@ -288,9 +288,9 @@ inverse : Matrix ->{} Matrix
 
 The typechecker then enforces that `inverse` does not require any abilities.  
 
-👉 The signature `A ->{} B` is different from the signature `A -> B`.
+👉 Telling Unison a signature `A ->{} B` is different from telling it `A -> B`.
 
-The former is the type of a pure function.  When you write the latter, you're asking for the ability list to be inferred by the Unison type-checker.  
+The former is how you input the type of a pure function.  When you write the latter, you're asking for the ability list to be inferred by the Unison type-checker.  
 
 👉 On code that you write, the signature `A -> B` doesn't mean 'no abilities', but rather that Unison will determine the ability list itself.  
 

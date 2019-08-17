@@ -223,7 +223,7 @@ unique type Direction = North | South | East | West
 
 When compiling these declarations, Unison will generate a [universally unique identifier](https://en.wikipedia.org/wiki/Universally_unique_identifier) for the type and use that identifier when generating the hash for the type. As a result, the type gets a hash that is universally unique.
 
-You can supply a unique identifier yourself if you want the hash to be completely determined by the source code. The optional identifier goes in square brackets after the `unique` keyword:
+Althought not recommended to work explicitly with unique identifiers at this time, you can supply a unique identifier yourself if you want the hash to be completely determined by the source code. The optional identifier goes in square brackets after the `unique` keyword:
 
 ``` haskell
 unique[suit_CBtSxLszHECvjClJpNtxYw] type

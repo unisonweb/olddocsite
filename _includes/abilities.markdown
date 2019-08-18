@@ -12,6 +12,8 @@ See also [this][langref#abilities-and-ability-handlers].
 
 TODO: contents list
 
+TODO terminology for reviewer discussion, including not avoiding the word 'effectful'
+
 ## Motivation
 
 TODO
@@ -20,6 +22,8 @@ TODO
  - including the fact that we're separating declaration of the ability from the handler which knows how to provide it
  - why unison has them, why you haven't heard of abilities before
  - benefits: separation of interface from implementation; easy to have pure test handlers, testability; control flow control; abilities compose; constraining type signatures
+
+TODO mention 'ambient abilities' and 'ability check' somewhere
 
 ## Using abilities
 
@@ -71,7 +75,7 @@ tomorrow : '{SystemTime} .base.Nat
 ```
 > 🐘 Again, that `'` is syntactic sugar for delayed function types - this signature is equivalent to `() ->{SystemTime} .base.Nat`. 
 
-> 🐞 You may see a `∀` in the signature, due to Unison issue #689.
+> 🐞 You may see a `∀` in the signature, due to Unison issue [#689](https://github.com/unisonweb/unison/issues/689).
 
 The `{SystemTime}` is an **ability list** - in this case a list of just one ability.  It's saying that `tomorrow` _requires_ the `SystemTime` ability - that ability needs to be available in functions that call `tomorrow`.  And it's also saying that the `SystemTime` ability is available for use within the definition of `tomorrow` itself.  
 
@@ -178,7 +182,7 @@ The `IO` ability spans many different types of I/O - the snippet above shows soc
 
 So, since all the ways in which we can interact with the world are captured in the `IO` ability, why do we ever need any other abilities?  There are several reasons.
 1. We don't want to write all our code in terms of low-level concepts like files and threads.  We want higher-level abstractions, for example persistent distributed stores for typed data, and stream-based concurrency.  The low-level stuff is what we're used to from traditional programming environments, but we want to hide it behind powerful libraries, written in Unison, that expose better abstractions.  
-2. We don't want `{IO}` to feature too often in the type signatures of the functions we write, because it doesn't tell us much.  Since `IO` contains so many different types of I/O, it leaves the behavior of our functions very unconstrained.  We want to use our type signatures to document and enforce the abiity requirements of our functions in a more fine-grained way.  For instance, it's useful that we know, just by looking at its signature, that `tomorrow : '{SystemTime} .base.Nat` isn't going to write to file or open a socket.  If we instead had `tomorrow : '{IO} .base.Nat`, then we'd have no such guarantee, without going and inspecting the code.  
+2. We don't want `{IO}` to feature too often in the type signatures of the functions we write, because it doesn't tell us much.  Since `IO` contains so many different types of I/O, it leaves the behavior of our functions very unconstrained.  We want to use our type signatures to document and enforce the ability requirements of our functions in a more fine-grained way.  For instance, it's useful that we know, just by looking at its signature, that `tomorrow : '{SystemTime} .base.Nat` isn't going to write to file or open a socket.  If we instead had `tomorrow : '{IO} .base.Nat`, then we'd have no such guarantee, without going and inspecting the code.  
 3. Some things can be expressed well using abilities, but *don't* require interaction with the outside world. `Store` is an example.  
 
 This leads us to a common pattern: 
@@ -252,7 +256,7 @@ handleInput i = name = getName i
 
 Suppose we're running `handleInput`, and we hit the `not (valid i)` error case inside `getName`: then we call `Abort.abort` and exit immediately.  Execution resumes from after the first enclosing `Abort` handler.  So, in this case, we exit both `getName` and `handleInput` immediately, since there's no handler in between the two.
 
-> Note that the `abort` request has polymorphic type, `abort : a`.  This means it can be used in any context, and still typecheck.  It doesn't actually need to be able to return an `a`, because computation is not going to contine after the call to `abort`.  In `getName`, `abort` is being used where a `Text` is required, so `a` is instantiated to `Text`.  
+> Note that the `abort` request has polymorphic type, `abort : a`.  This means it can be used in any context, and still typecheck.  It doesn't actually need to be able to return an `a`, because computation is not going to continue after the call to `abort`.  In `getName`, `abort` is being used where a `Text` is required, so `a` is instantiated to `Text`.  
 
 There's a variant of `Abort`, which lets you provide a value to describe what's happened - this is analogous to the exception handling provided in some other languages.  
 
@@ -276,11 +280,13 @@ There's a handler for this ability (which we'll see later), which gives the prog
 
 This trick can be neat for exhaustively exploring a space of possibilities, for example to optimize some decision.  
 
+That's the end of our tour of interesting example abilities.  Now let's dive deeper into the ability lists that can appear in type signatures, and what they mean.  
+
 ### More on abilities in type signatures
 
 #### Pure functions vs inferred abilities
 
-Empty ability lists are used for declaring pure functions.  For example:
+You can use an empty ability list to declare a pure function - that is, one that doesn't require any abilities.  For example:
 
 ``` haskell
 inverse : Matrix ->{} Matrix
@@ -317,8 +323,7 @@ orderServer' : ServerConfig ->{Log} '{IO} ()
 
 The first application requires (only) the `Log` ability, and the second requires (only) the `IO` ability.  This is a useful distinction.  In this case, it tells us we can set up an order server, involving inspecting some configuration, in a computation that does some logging but is otherwise pure.  Only the second stage might do unrestricted `IO`.  
 
-See [enclosing lambdas](#enclosing-lambdas) for how to _define_ a function like `orderServer'`.
-TODO fix link
+See [Defining functions with different ability lists on different arguments](#Defining-functions-with-different-ability-lists-on-different-arguments) for how to _define_ a function like `orderServer'`.
 
 It's useful to keep the following in mind when reading type signatures.  
 
@@ -356,7 +361,11 @@ So what does a plain `->` or `'` mean, when you see it after doing an `add`?  In
 
 👉 When you *give* Unison a plain `->` or `'` (with no `{…}`) you're asking it to infer some abilities.  When Unison gives *you* a plain `->` or `'`, it means `->{}` or `'{}`.
 
-So in particular, this means that if you type `->{}`, Unison can render it back to you as just `->`.  
+So in particular, this means that 
+- if you type `->{}`, Unison can render it back to you as just `->`
+- if you want Unison to enforce that the function you are writing is pure, then specify a signature for it that uses a `->{}` or a `'{}`.
+
+🚧 This dual meaning of a plan `->` arrow ('infer' or 'pure' depending on context) is a bit confusing.  The pure case may get its own style of arrow notation in future, to address this - Unison issue [#???](TODO).
 
 > 🐞 Note, Unison can currently sometimes fail to output its inferred abilities when you do `view` or `edit` (although it does correctly output them at the `ucm` command line when you typecheck your code or do `add`/`update`.)  This is due to Unison issue [#703](https://github.com/unisonweb/unison/issues/703).  However, it will re-run its inference again when you next add the code.
 
@@ -385,28 +394,104 @@ applyP f x = .base.io.printLine "applyP"
 
 This is saying that `applyP` requires `IO`, combined with whatever other abilities (`𝕖`) are required by its first argument.  (The combination process is a set union, so if `𝕖` also includes `IO`, then `IO` still only appears once in the resulting type.)
 
-#### Enclosing lambdas  TODO fix title
+#### Abilities are only relevant in computation signatures
 
-TODO abilities only mattering on signatures for lambdas (see slack discussion and ability typechecking doc)
+Not all type signatures are sensitive to abilities.  For example:
 
-not getting confused when interpreting local definition signatures
+``` haskell
+use .base
 
-TODO somewhere that detail about {A} X being a subtype of X, so beware ascribing your own ability signatures - where can you put too many abilities and it pass OK? 
+nowIfPast : Nat ->{SystemTime} Nat
+nowIfPast t = now : Nat
+              now = SystemTime.systemTime
+              if t < now then now else t
+```
 
-how to define orderServer'
+The outer signature, on the top-level binding for `nowIfPast`, is what we'd expect.  But the signature on the inner binding for `now` is surprising.  Why doesn't it have to be something like `'{SystemTime} Nat`?  After all, the definition of `now` uses the `SystemTime` ability.  
+
+The answer is that functions and lambdas define _computations_, and it is computations that can involve abilities.  The body of `now` involves a computation, but that computation is happening in the context of the outer function binding (which is where the `SystemTime` ability is mentioned).  The type signature on `now` is just talking about the _value_ that results from the computation - a plain `Nat`.
+
+So, the signatures where abilities are relevant are just those for functions and lambdas.  Let's see what that looks like.
+
+``` haskell
+-- doesn't compile
+nowIfPast' : [Nat] ->{SystemTime} [Nat]
+nowIfPast' ts = f : Nat ->{} Nat
+                f = t -> if t < SystemTime.systemTime then SystemTime.systemTime else t
+                List.map f ts
+-- also note that we're checking the system clock up to (2 * List.size ts) times in this example!
+```  
+
+In `nowIfPast'`, we've defined an inner lambda, `f`.  But we've made a mistake: the computation inside `f` involves the `SystemTime` ability, but `f`'s signature claims that `f` is pure (the empty braces `{}`).  Unison only accepts this function once we've removed the `{}` (to get ability inference) or replaced it with `{SystemTime}`.  
+
+Note that it's the _innermost enclosing lambda_ that specifies the available abilities: just because the signature on the top-level binding for `nowIfPast'`mentions `SystemTime`, that's not enough for Unison to accept `f`.
+
+#### Ability subtyping
+
+There's one last gotcha to be aware of when interpreting abilities in signatures.  Let's take a look at a better (if still slightly verbose) version of `nowIfPast'`.
+
+``` haskell
+nowIfPast'' : [Nat] ->{SystemTime} [Nat]
+nowIfPast'' ts = now : Nat
+                 now = SystemTime.systemTime
+                 f : Nat ->{} Nat
+                 f = t -> if t < now then now else t
+                 List.map f ts
+-- this time we check the system clock exactly once - much better! (unless `ts` was empty...)
+```
+
+`f` is now pure, which is nice - even though it's captured the value `now` which was produced in an effectful computation.  
+
+The gotcha is that Unison will accept other signatures for `now` and `f` than those given above.
+- For `f`, for example, it will accept `f : Nat ->{SystemTime} Nat`, saying that `f` is _allowed_ to use `SystemTime` even though it doesn't.  
+- For `now`, it will accept `now : {SystemTime} Nat`, since (in the underlying type theory) `{SystemTime} Nat` is a subtype of `Nat`.  (🐞 This unhelpful permissiveness is Unison issue [#665](https://github.com/unisonweb/unison/issues/665).)
+
+#### Defining functions with different ability lists on different arguments
+
+In an [earlier section][#Ability-lists-can-appear-before-each-function-argument], we saw the following function signature:
+``` haskell
+orderServer' : ServerConfig ->{Log} '{IO} ()
+```
+This sort of signature can be useful, to control exactly _when_ different effects take place.  
+
+But we didn't see how to define such a function!  Here's a first, unsuccessful attempt.
+
+TODO actually this does compile... why? see #745
+``` haskell
+-- doesn't compile
+orderServer' : ServerConfig ->{Log} '{IO} ()
+-- remember this signature is equivalent to ServerConfig ->{Log} () -> {IO} ()
+orderServer' sc unit = 
+  log (ServerConfig.toText sc)
+  startServer sc
+  -- suppose we have a function startServer : ServerConfig ->{IO} ()
+```
+
+TODO explain why this doesn't compile, and by contrast why the following does.
+
+``` haskell
+orderServer'' : ServerConfig ->{Log} '{IO} ()
+orderServer'' sc = 
+  log (ServerConfig.toText sc)
+  '(startServer sc)
+```
+
+TODO maybe I need to go to ->{SystemTime} '{Log} '{IO} () or something to actually illustrate the point about needing lambdas to separate the abilities in the definition, since it seems I need to keep the top level binding returning a delayed result anyway.
 
 ## Invoking handlers
 
+Now it's time to take a look at _handle expressions_.  These are the things that actually let us run code that uses abilities.  
+
+They do this by allowing us to _eliminate_ an ability from a type signature, including by converting it to another ability, which might be `IO`.  
+
 TODO
 
-(does this require understanding the type signature of the handler? Hopefully not)
-Example of a test handler vs a ‘real’ handler
-Examples of converting abilities out into regular types, eg Abort to Maybe
-Getting IO provided at the top level
-stacked handlers
-providing the initial state
-choose and revisit running examples
-...
+the SystemTime handler's signature
+SystemTime --> IO (and how to execute)
+SystemTime test handler
+Store and labelTree, providing initial state / abort and maybe
+Store and Log in labelTree, stacked handlers
+handling just Log in orderserver''
 
 ## Writing handlers
 

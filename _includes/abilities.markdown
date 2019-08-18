@@ -424,7 +424,9 @@ nowIfPast' ts = f : Nat ->{} Nat
 
 In `nowIfPast'`, we've defined an inner lambda, `f`.  But we've made a mistake: the computation inside `f` involves the `SystemTime` ability, but `f`'s signature claims that `f` is pure (the empty braces `{}`).  Unison only accepts this function once we've removed the `{}` (to get ability inference) or replaced it with `{SystemTime}`.  
 
-Note that it's the _innermost enclosing lambda_ that specifies the available abilities: just because the signature on the top-level binding for `nowIfPast'`mentions `SystemTime`, that's not enough for Unison to accept `f`.
+👉 Note that it's the _innermost enclosing lambda_ that specifies the available abilities.
+
+So just because the signature on the top-level binding for `nowIfPast'`mentions `SystemTime`, that's not enough for Unison to accept `f`.
 
 #### Ability subtyping
 
@@ -450,7 +452,7 @@ The gotcha is that Unison will accept other signatures for `now` and `f` than th
 
 In an [earlier section][#Ability-lists-can-appear-before-each-function-argument], we saw the following function signature:
 ``` haskell
-orderServer' : ServerConfig ->{Log} '{IO} ()
+orderServer' : ServerConfig ->{Log} '{.base.IO} ()
 ```
 This sort of signature can be useful, to control exactly _when_ different effects take place.  
 
@@ -458,6 +460,8 @@ But we didn't see how to define such a function!  Here's a first, unsuccessful a
 
 TODO actually this does compile... why? see #745
 ``` haskell
+use .base.IO
+
 -- doesn't compile
 orderServer' : ServerConfig ->{Log} '{IO} ()
 -- remember this signature is equivalent to ServerConfig ->{Log} () -> {IO} ()
@@ -484,26 +488,209 @@ Now it's time to take a look at _handle expressions_.  These are the things that
 
 They do this by allowing us to _eliminate_ an ability from a type signature, including by converting it to another ability, which might be `IO`.  
 
-TODO
+### Our first `handle` expression
 
-the SystemTime handler's signature
-SystemTime --> IO (and how to execute)
-SystemTime test handler
-Store and labelTree, providing initial state / abort and maybe
-Store and Log in labelTree, stacked handlers
-handling just Log in orderserver''
+First let's see what the type signature of a handler looks like.  We'll see some implementations in [Writing handlers][#writing-handlers].  
+
+```haskell
+systemTimeToIO : .base.Request SystemTime a ->{.base.io.IO} a
+```
+
+First observation: we can treat a handler just like a regular function.  The only magic in its signature is the fact that `.base.Request` is a special built-in type.  We'll unpack the signature more later, but for now we can just read it as a function that takes `SystemTime` requests, and handles them using `IO`.  
+
+Now let's remember our simple function from earlier, which uses `SystemTime`.
+
+``` haskell
+tomorrow : '{SystemTime} .base.Nat
+tomorrow = '(SystemTime.systemTime + 24 * 60 * 60)
+```
+
+And now suppose we want to print the result to the console.  How can we do that?  Here's a good start:
+
+``` haskell
+use .base
+use .base.io
+
+printTomorrow : '{IO, SystemTime} ()
+printTomorrow = '(printLine (Nat.toText !tomorrow))
+```
+
+Notice we've already introduced some `IO`, before even eliminating `SystemTime`, to print the result to the console.  
+
+We can't run `printTomorrow` yet.
+
+```
+.> execute !printTomorrow
+
+  The expression in red needs these abilities: {.base.io.IO, SystemTime}, but this location only has access to the {.base.io.IO} ability,
+  
+      1 | main_ = !printTomorrow
+```
+
+`execute` can only help us eliminate `IO` - any other ability we need to `handle` ourselves.  Here's how...
+
+``` haskell
+printTomorrow' : '{IO} ()
+printTomorrow' = '(handle systemTimeToIO in !printTomorrow)
+```
+
+That works! 😎
+
+```
+.> execute !printTomorrow'
+5638144744800
+```
+
+Notice we needed to force `printTomorrow`, turning it into `{IO, SystemTime} ()`, then delay the result again to get a `'{IO} ()`.  The intuition here is that you need to make `printTomorrow` actually _do_ its stuff, in order to handle the `SystemTime` requests it throws out - but that you need to delay the result because you can't have `printTomorrow'` doing `IO` requests except under a delay.  
+
+TODO OK intuition?  valid to think about type `{IO, SystemTime} ()` here?  asked on slack
+
+So now we can use a handler to execute code that uses abilities!  
+
+There's something slightly unsatisfying about our definition of `printTomorrow` - its signature `'{IO, SystemTime} ()` tells us it needs _both_ abilities, but we wanted to _swap_ out `SystemTime` and replace it with `IO`.  We can smarten it up a bit by splicing the definition of `printTomorrow` into `printTomorrow'`.
+
+``` haskell
+printTomorrow'' : '{IO} ()
+printTomorrow'' = '(handle systemTimeToIO in printLine (Nat.toText !tomorrow))
+
+-- or, we can also do:
+
+printTomorrow'' : '{IO} ()
+printTomorrow'' = '(printLine (Nat.toText (handle systemTimeToIO in !tomorrow)))
+```
+
+### Trying out a test handler
+
+We started this tutorial by singing the praises of handlers, and how the decouple the ability interface from a specific implementation.  Let's see that in action, and use a test handler to test our `tomorrow` function.  
+
+Suppose we have a handler like this:
+
+``` haskell
+use .base
+systemTimeToPure : [Nat] -> Request SystemTime a -> a
+```
+
+We can feed this handler a list of values we'd like it to return to each successive `systemTime` request.  And the resultant handled expression is pure - it doesn't need to map through to `.base.io.systemTime`.  
+
+Let's test `tomorrow`:
+
+``` haskell
+use test.v1
+
+test> tests.square.ex1 = run (expect ((handle (systemTimeToPure [0]) in !tomorrow) == 86400))
+```
+
+Awesome! 💥 😀
+
+### Stacking handlers
+
+Suppose our `labelTree` function from earlier reported its progress to a log.
+
+``` haskell
+use .base
+labelTree : Tree a ->{Store Nat, Log} Tree (a, Nat)
+```
+
+And suppose we have the following.
+
+``` haskell
+-- Handlers for each ability.
+logHandler : [Text] -> Request Log a -> (a, [Text])
+storeHandler : v -> Request (Store v) a -> a
+-- The first arguments to each of these are the initial values of 
+-- the log and the store, respectively.  
+
+-- Some data to work on.
+tree : Tree Text
+tree = Branch Leaf "Hi!" Leaf
+
+-- A helper function.
+fst : (a, b) -> a
+```
+
+Then here's how we run `labelTree`, eliminating both abilities.  We just need two nested handle expressions.
+
+``` haskell
+labelledTree : Tree (Text, Nat)
+labelledTree = fst (handle logHandler [] in (handle storeHandler 0 in (labelTree tree)))
+-- The call to fst just discards the log output.
+```
+
+Note that we could equally well have swapped the order we handle the two abilities.  
+
+TODO maybe - handling just Log in orderserver''
 
 ## Writing handlers
 
-TODO
-Matching on the requests, and a pure case
-Continuations
-Tail position
-Being able to use the continuation 0 or 2+ times.  
-[Performance/implementation/optimization futures?]
-...
+We now know how to use and handle abilities.  The last piece of the puzzle is writing our own handlers.  
 
-> ⚙️ Interestingly, you can define your own handler for `IO`!
+Here's an example.  We'll unpack this piece by piece.  
+
+``` haskell
+use .base
+use .base.io
+
+systemTimeToIO : Request SystemTime a ->{IO} a
+systemTimeToIO r =
+  case r of
+    { SystemTime.systemTime -> k } -> handle systemTimeToIO in k !systemTime
+    { a } -> a
+
+-- We've switched here to having SystemTime.systemTime return a 
+-- .base.io.EpochTime, to match what .base.io.systemTime returns 
+-- and so make things convenient.  
+```
+
+What's going on here?  Let's start with a recap of the type signature.  
+
+* A `Request A T` is a value representing a computation that requires ability `A` and has return type `T`.  `.base.Request` is a built-in type constructor that ties in to Unison's `handle` mechanism: `handle h in k` is taking the computation `k` which has type `T` and uses ability `A`, building a `Request A T` for it, and passing that to `h`.
+
+* A handler is a function `Request A T -> R` - it takes the computation and boils it down into some return value.  Common cases:
+
+  * Typically the signature is `Request A t -> R`, where `t` is a type variable - i.e. `forall t. Request A t -> R`.  Usually the handler doesn't care what the computation's return type is, and we want to be able to apply it at any type.  
+
+  * Sometimes the handler takes extra arguments - for example we saw `storeHandler : v -> Request (Store v) a -> a`, where the first argument is the initial value of the store.  The `Request` is always the last argument, so we can partially apply the handler to get a function whose type is of the above form, which a `handle` expression will accept.
+
+  * Often, the result type `R` of the handled computation is the same as `T`, i.e. `Request A T -> T`.  We saw an exception with `logHandler : [Text] -> Request Log a -> (a, [Text])` - we wanted a way to get at the log that was written!
+
+Let's pause and introduce the key idea behind handlers.  This is a bit subtle so take a deep breath!
+
+👉 A handler handles _one step_ in a computation, and then specifies what to do with the rest of the steps.
+
+We think of the computation as divided up into steps, punctuated by requests using the ability in question, and culminating in a final step which returns a result.  The handler specifies how to deal with each possible kind of step: each of the requests declared by the ability, plus the final step to get the return value.  
+
+Once a handler has dealt with one step, it then specifies what to do with the **continuation** of the computation - that is, all the rest of the steps, treated as one unit.  Typically it does this by recursively calling itself, via `handle`.  So each invocation of the handler unwraps one step of the computation and deals with it.  
+
+Make sense? 🤔  It should do once we've worked through some more examples.  
+
+Let's start by unpacking the body of `systemTimeToIO`.  
+
+* It's doing a pattern match on the `Request SystemTime a`, but the patterns are using a special syntax - here we're seeing `{ SystemTime.systemTime -> k }`.  This means, 'inspect the first step in the computation, and if it's a call out to `SystemTime.systemTime`, then match this branch, and take the remainder of the computation and call it `k`'.  `k` has type `EpochTime -> a`.  The argument of `k` is the return type of the ability request - i.e. the return type of `SystemTime.systemTime`.  This makes sense: if the ability is being used to retrieve some information, then probably the rest of the computation wants to use that information!  (If the request method had returned `()`, then `k` would have had type `() -> a` - there's no information being passed in, but still `k` is delayed.)
+
+* It's handling this case first by evaluating `k !systemTime`.  This is the sharp end of the handler.  The point of the whole business was to consult the system clock by mapping down to the appropriate `IO` call.  That's what we do here.  Note the `!` to force that call, and how we pass the result straight into `k`, as input for the rest of the computation.  This part uses the `IO` ability, hence the `->{IO}` in the signature of the handler.  
+
+* But we're not done yet!  We've only handled one step of the computation.  `k !systemTime` is all of the rest of the steps.  The handler _does_ specify how to handle all these: recursively, with the `handle systemTimeToIO in`.  That converts our effectful computation of return type `T` (in this case type `a`), into a computation of type `R` (in this case also type `a`), which does _not_ use the `SystemTime` ability.  
+
+* The last case of the pattern match, ('the pure case'), `{ a } -> a` is easy.  It's saying 'and when we get to the last step of the computation, take the `a` it returns, and just pass that back directly as the result of the `handle` expression.'
+
+Once we've covered all the cases, we've explained to Unison how to handle all the steps of a `SystemTime` computation, by translating it into an `IO` computation, in which the use of the `SystemTime` ability has been eliminated.  
+
+And that's it!  So now let's take a look at some more examples.  
+
+TODO
+
+possibilities
+  store, threading the state through, a method with an arg
+  systemTimeToPure -- maybe noting that it should do something about the running out of inputs case
+  log
+  abort - Being able to use the continuation 0 or 2+ times.  
+  exception -- exercise
+  choice (collect, random)
+  > ⚙️ Interestingly, you can define your own handler for `IO`!
+
+add xrefs to each of these from earlier  
+
+importance of handle being in tail position
 
 proxy handler pattern
 

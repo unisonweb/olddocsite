@@ -365,7 +365,7 @@ So in particular, this means that
 - if you type `->{}`, Unison can render it back to you as just `->`
 - if you want Unison to enforce that the function you are writing is pure, then specify a signature for it that uses a `->{}` or a `'{}`.
 
-🚧 This dual meaning of a plan `->` arrow ('infer' or 'pure' depending on context) is a bit confusing.  The pure case may get its own style of arrow notation in future, to address this - Unison issue [#???](TODO).
+🚧 This dual meaning of a plan `->` arrow ('infer' or 'pure' depending on context) is a bit confusing.  The pure case may get its own style of arrow notation in future, to address this - Unison issue [#738](https://github.com/unisonweb/unison/issues/738).
 
 > 🐞 Note, Unison can currently sometimes fail to output its inferred abilities when you do `view` or `edit` (although it does correctly output them at the `ucm` command line when you typecheck your code or do `add`/`update`.)  This is due to Unison issue [#703](https://github.com/unisonweb/unison/issues/703).  However, it will re-run its inference again when you next add the code.
 
@@ -451,6 +451,7 @@ The gotcha is that Unison will accept other signatures for `now` and `f` than th
 #### Defining functions with different ability lists on different arguments
 
 In an [earlier section][#Ability-lists-can-appear-before-each-function-argument], we saw the following function signature:
+
 ``` haskell
 orderServer' : ServerConfig ->{Log} '{.base.IO} ()
 ```
@@ -458,7 +459,6 @@ This sort of signature can be useful, to control exactly _when_ different effect
 
 But we didn't see how to define such a function!  Here's a first, unsuccessful attempt.
 
-TODO actually this does compile... why? see #745
 ``` haskell
 use .base.IO
 
@@ -468,10 +468,14 @@ orderServer' : ServerConfig ->{Log} '{IO} ()
 orderServer' sc unit = 
   log (ServerConfig.toText sc)
   startServer sc
-  -- suppose we have a function startServer : ServerConfig ->{IO} ()
+  -- so this supposes we have a function startServer : ServerConfig ->{IO} ()
 ```
 
-TODO explain why this doesn't compile, and by contrast why the following does.
+The problem with this is that by the time we've given `orderServer'` that `unit` argument, we've got on to the second arrow - the one that only allows us the `IO` ability.  So we can't use `log` in the function definition.  (If Unison allowed this, then partially applying `orderServer'` would yield a function of type `'{IO} ()` that uses the `Log` ability.)
+
+🐞 Umm, actually at the moment the above does compile, wrongly ☹️  This is due to Unison issue [#745](https://github.com/unisonweb/unison/issues/745).
+
+To define this function, we need to process one argument at a time, and at each stage only use the abilities that argument's arrow (the one on its right) gives us.  Here's a correct definition:
 
 ``` haskell
 orderServer'' : ServerConfig ->{Log} '{IO} ()
@@ -480,7 +484,7 @@ orderServer'' sc =
   '(startServer sc)
 ```
 
-TODO maybe I need to go to ->{SystemTime} '{Log} '{IO} () or something to actually illustrate the point about needing lambdas to separate the abilities in the definition, since it seems I need to keep the top level binding returning a delayed result anyway.
+Note how we're just consuming the first argument, doing some logging, and then returning a lambda of type `'{IO} ()`.  
 
 ## Invoking handlers
 
@@ -541,9 +545,9 @@ That works! 😎
 5638144744800
 ```
 
-Notice we needed to force `printTomorrow`, turning it into `{IO, SystemTime} ()`, then delay the result again to get a `'{IO} ()`.  The intuition here is that you need to make `printTomorrow` actually _do_ its stuff, in order to handle the `SystemTime` requests it throws out - but that you need to delay the result because you can't have `printTomorrow'` doing `IO` requests except under a delay.  
+Notice in the function definition, we needed to force `printTomorrow`, turning it into `{IO, SystemTime} ()`, then delay the result again to get a `'{IO} ()`.  The intuition here is that you need to make `printTomorrow` actually _do_ its stuff, in order to handle the `SystemTime` requests it throws out - but that you need to delay the result because you can't have `printTomorrow'` doing `IO` requests except under a delay.  
 
-TODO OK intuition?  valid to think about type `{IO, SystemTime} ()` here?  asked on slack
+❔ Would it be better for `handle` to take a delayed function, so you could just write `printTomorrow' = handle systemTimeToIO in printTomorrow`?  Feedback welcome... 📨
 
 So now we can use a handler to execute code that uses abilities!  
 
@@ -618,8 +622,6 @@ labelledTree = fst (handle logHandler [] in (handle storeHandler 0 in (labelTree
 
 Note that we could equally well have swapped the order we handle the two abilities.  
 
-TODO maybe - handling just Log in orderserver''
-
 ## Writing handlers
 
 We now know how to use and handle abilities.  The last piece of the puzzle is writing our own handlers.  
@@ -680,13 +682,13 @@ And that's it!  So now let's take a look at some more examples.
 TODO
 
 possibilities
-  store, threading the state through, a method with an arg
-  systemTimeToPure -- maybe noting that it should do something about the running out of inputs case
-  log
-  abort - Being able to use the continuation 0 or 2+ times.  
-  exception -- exercise
-  choice (collect, random)
-  > ⚙️ Interestingly, you can define your own handler for `IO`!
+*  store, threading the state through, a method with an arg
+*  systemTimeToPure -- maybe noting that it should do something about the running out of inputs case
+*  log
+*  abort - Being able to use the continuation 0 or 2+ times.  
+*  exception -- exercise
+*  choice (collect, random)
+*  > ⚙️ Interestingly, you can define your own handler for `IO`!
 
 add xrefs to each of these from earlier  
 

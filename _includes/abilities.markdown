@@ -225,7 +225,7 @@ ability Log where
 
 You could imagine the handler decorating the text with timestamps and other useful contextual information.  
 
-The `Log` ability is typical of the class of abilities which let the program emit a sequence of data or commands.  The information flow is purely *out* of the program using the ability.  Contrast this with the `Store` and `IO` abilities, in which the flow of information is two-way, both in and out of the program.  
+The `Log` ability is typical of the class of abilities which let the program emit a sequence of data or commands.  The information flow is purely *out* of the computation using the ability.  Contrast this with the `Store` and `IO` abilities, in which the flow of information is two-way, both in and out of the computation.  
 
 Most abilities are concerned with emitting and/or receiving data from/to the program.  However, abilities can do more than that: they can affect the program's control flow in ways that a regular function can't, as shown in the next example.  
 
@@ -679,23 +679,180 @@ Once we've covered all the cases, we've explained to Unison how to handle all th
 
 And that's it!  So now let's take a look at some more examples.  
 
-TODO
+### Example handlers
 
-possibilities
-*  store, threading the state through, a method with an arg
-*  systemTimeToPure -- maybe noting that it should do something about the running out of inputs case
-*  log
-*  abort - Being able to use the continuation 0 or 2+ times.  
-*  exception -- exercise
-*  choice (collect, random)
-*  > ⚙️ Interestingly, you can define your own handler for `IO`!
+#### Feeding in information via a pure handler
 
-add xrefs to each of these from earlier  
+Let's revisit the `systemTimeToPure` handler which we were using for testing back in [Trying out a test handler](#trying-out-a-test-handler).  Here's the implementation:
 
-importance of handle being in tail position
+``` haskell
+use .base
+systemTimeToPure : [Nat] -> Request SystemTime a -> a
+systemTimeToPure xs r = case r of
+  { SystemTime.systemTime -> k } -> case xs of
+    x +: rest -> handle (systemTimeToPure rest) in k x
+  { a } -> a
+```
 
-proxy handler pattern
+The interesting thing here is that the handler is taking a `[Nat]` argument, to give it a list of values to feed out each time there's a call to `systemTime`.  Note how the handler is partially applied in the handle expression, `(systemTimeToPure rest)`.  
 
-## Recap - worked example
+> Note how the case statement fails to handle receiving an empty list `xs`.  Perhaps a better choice would be for the handler to use `Abort` to cover this case - see the [exercises](#exercises).
 
-TODO Maybe Send/Receive + Log ?
+#### Handling `Log`
+
+Now let's see a handler for our ability, `ability Log where log : Text -> ()`, which we met back [here](#log).  This one doesn't try to map it down to file I/O - it's just collecting the log lines and returning them in the handle expression's return value.
+
+``` haskell
+use .base
+logHandler : [Text] -> Request Log a -> (a, [Text])
+logHandler ts r =
+  case r of
+    { Log.log t -> k } -> handle logHandler (t +: ts) in !k
+    { a } -> (a, ts)
+```
+
+Again, `logHandler` is being partially applied in the `handle` expression, for the same reason as with `systemTimeToPure`.  The _new_ things we see in this handler are...
+* the return type - it's not just `a`.  The only `case` branch where that's visible is the one for the pure case.
+* the `Log.log` request takes an argument.  That works how you'd expect - you just match on it (the `t` in the pattern.)
+* the `!k`: because `log` just returns `()`, we only need to pass `()` when we call the continuation.  `!k` is another way of writing `k ()`.  
+
+#### Handling `Store`
+
+Remember the `Store` ability from [here](#store):
+
+``` haskell
+ability Store v where
+  get : v
+  put : v -> ()
+```
+
+Here's the handler for it.
+
+``` haskell
+use .base
+storeHandler : v -> Request (Store v) a -> a
+storeHandler storedValue s = case s of 
+  { Store.get -> k } -> handle storeHandler storedValue in k storedValue
+  { Store.put v -> k } -> handle storeHandler v in !k
+  { a } -> a
+```
+
+This is all made up of pieces we've seen before.  Notice the trick in the `put` case: instead of passing through the old `storedValue` to the recursive call, we're passing the new value `v`.
+
+It's good to dwell for a moment on where the stored state actually 'lives'.  It lives in the arguments passed on each call to the handler, and nowhere else.  The evolution of the state during the computation is captured by the changing successive values passed on each new recursive call.  
+
+Now let's take a look at a couple of handlers for abilities that affect the program's control flow in ways that a regular function can't - the key here is whether and when they choose to call `k`.
+
+#### Handling `Abort`
+
+Here's the handler for `ability Abort where abort : a`, which we met in [`Abort` and `Exception`](#abort-and-exception):
+
+``` haskell
+use .base
+abortToPure : Request Abort a -> Optional a
+abortToPure r = case r of
+  { Abort.abort -> k } -> None
+  { a } -> Some a
+```
+
+The key point here is that the case for `abort` *does not use `k`*.  Whatever the remainder of the computation after the call to `abort`, it won't be evaluated, because the continuation `k` is discarded.  
+
+#### Handling `Choice`
+
+So if that was a handler calling the continuation 0 times, what about 2 times?  Let's see a handler for `ability Choice where choose : Boolean`, which we met [here](#choice).  This handler runs through a whole tree of possible evolutions of the computation, with a fork at each `choose`, and collects the results in a list.
+
+``` haskell
+use .base
+choiceToPure : Request Choice a -> [a]
+choiceToPure r = case r of 
+  { Choice.choose -> k } -> (handle choiceToPure in k false) ++ (handle choiceToPure in k true)
+  { a } -> [a]
+```
+
+> This is the first handler we've seen where the call to `handle` is not in tail position - i.e. where the return value of `handle` still needs some further processing (with `++`) before returning.  Recursive calls in tail position can be made any number of times in sequence, while still using constant space (because the function's stack frame can be reused from call to call).  `choiceToPure` does not have this property.  In this case that's probably fine - if you're handling a computation that makes a long sequence of calls to `choose`, you're likely to run into the exponential growth of the `[a]` list before the linear growth of the handler stack troubles you.  (See the [exercises](#exercises) to try writing a handler that does random sampling instead of accumulating all possible results.)
+
+### The proxy handler pattern
+
+Sometimes, you want to handle an ability without eliminating it - so, passing through the requests, perhaps with some modifications, and perhaps 'teeing off' some information as it goes through.
+
+For example, suppose we want a handler that logs the values that a `Store` computation `put`s.
+
+``` haskell
+use .base
+storeProxyLog : (v -> Text) -> Request (Store v) a ->{Store v, Log} a
+storeProxyLog print r = case r of
+  { Store.get -> k } -> handle storeProxyLog print in k Store.get
+  { Store.put v -> k } -> 
+    Log.log ("Put: " ++ print v)
+    Store.put v
+    handle storeProxyLog print in !k
+  { a } -> a
+```
+
+This `Store` handler is itself using `Store`!  And `Log` too.  Take a look at the stack of handlers we end up with in `result` below.
+
+``` haskell
+computation : '{Store} Nat
+computation = 'let
+                Store.put 42
+                Store.get
+
+result : (Nat, [Text])
+result = handle logHandler [] in (handle storeHandler 0 in (handle storeProxyLog Nat.toText in !s))
+
+> result
+
+    9  | > result
+           ⧩
+           (42, ["Put: 42"])
+
+```
+
+TODO actually this hits an infinite recursion 😭
+
+So the abilities used by the computation are being transformed step-by-step as follows: `{Store Nat}`, then `{Store Nat, Log}`, then `{Log}`, then `{}`.  
+
+Note how, if we wanted it to, `storeProxyLog` would be able to *change* the `v` value that `storeHandler` stores on a `put`, and the value that gets given to the computation on a `get`.  
+
+> ⚙️ Interestingly, you can define your own handler for `IO`!  One application for this would be to write a proxy handler to record all the input a program receives from the outside world.  You could then write another handler to replay the information into the program later - which is a pure computation, and so easier for debugging.  (🍭 This would be a great pair of Unison library functions for someone to write! 😀)
+
+## Conclusion
+
+You now know all about Unison abilities!  You can...
+* write effectful code that calls out to abilities like `Log`, `Abort`, and `Store`
+* run effectful computations using `handle` expressions
+* write handlers (functions of type `Request r a -> o`) to translate one ability into another (possibly `IO`), including handlers that
+  * send information *in* to the computation, or receive information coming *out*, or both
+  * influence program control flow in ways regular functions can't (like `Abort` and `Choice`)
+* understand ability lists in subtle type signatures like `ServerConfig ->{Log} '{IO} ()`
+* understand Unison's ability generalization and inference, and when it lets you
+  * omit ability lists in type signatures, letting Unison infer them
+  * pass effectful functions into higher-order functions like `map`.
+
+Great work! 👍 😎 
+
+#### What next?
+* Try working through some of the exercises below!
+* We'd love you to get in touch with us to let us know what you found difficult, or if you have any ideas for improving Unison's ability support, or even if you just think it's cool 😁
+
+## Exercises
+
+Here are some ideas for exercises to get you fluent in working with abilities.  In each case, be sure to actually try running your code!
+
+1. Write an ability `ConsoleIO`, and a handler for it of type `Request ConsoleIO a ->{IO} a` that uses `getLine` and `putLine` from `.base.io`.  Write a program of type `'{ConsoleIO} Text`.  
+
+2. Write a handler for `Log` that writes to file.  Write a program of type `'{Log} ()` and try running it first with your handler, and then with the `logHandler` from [Handling `Log`](#handling-log).
+
+3. Write a handler for the `Exception` ability shown in [`Abort` and `Exception`](#abort-and-exception).
+
+4. Change the `systemTimeToPure` handler from [Feeding in information via a pure handler](#feeding-in-information-via-a-pure-handler) so that it uses `Abort` to handle the case where it runs out of data to pass to the computation.  
+
+5. Change the `choiceToPure` handler from [Handling `Choice`](#handling-choice) to return a value of `type Choices a = Choice (Choices a) (Choices a) | Result a`, so you can see what choices led to each result.  Try using it in a program that counts 'tails' in a sequence of coin tosses.  
+
+6. Write an ability `Random` that lets a program ask for a random `Nat`.  Write a handler that acts as a pseudo-random number generator.  (You get a simple PRNG by iterating the function `seed -> (6364136223846793005 * seed + 1442695040888963407)`) [[reference](https://en.wikipedia.org/wiki/Linear_congruential_generator)]
+
+7. Write a handler for `Choice` which instead of enumerating *all* possible variants of the computation instead takes a random sample of them.  
+
+8. Start with `ability Send a where send : a -> ()` and `ability Receive a where receive : a`.  Write a 'multi-handler' of type `Request (Send m) a -> Request (Receive m) b ->{Abort} b`.  Then enhance it so that the messages `m` flowing between the two computations are output using `Log`.  TODO is this possible?  does it need more coverage in this tutorial?
+
+9. Write a proxy handler for `IO` that records the input received by the program, at least for some `IO` requests.  Write another `IO` handler to play it back into the program later.  Write a function `recordReplay : ('{IO} ()) ->{IO} ()` that runs its argument twice - once 'for real' with recording, and once as a replay.  (Don't bother saving off the record to disk - that will get easier when Unison gets support for typed data persistence.)

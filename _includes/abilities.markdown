@@ -8,7 +8,45 @@ This tutorial explains how Unison handles effectful computations, like storing s
 
 ## Contents
 
-TODO
+- [Introducing abilities](#introducing-abilities)
+  - [Contents](#contents)
+  - [Motivation](#motivation)
+    - [Making effectful behaviors visible in type signatures](#making-effectful-behaviors-visible-in-type-signatures)
+    - [Decoupling interface from implementation](#decoupling-interface-from-implementation)
+    - [Customizable control flow](#customizable-control-flow)
+    - [Recent research](#recent-research)
+  - [Using abilities](#using-abilities)
+    - [Type signatures of functions using abilities](#type-signatures-of-functions-using-abilities)
+      - [Type signatures in ability declarations](#type-signatures-in-ability-declarations)
+    - [Examples of abilities](#examples-of-abilities)
+      - [`Store`](#`store`)
+      - [`IO`](#`io`)
+      - [`Log`](#`log`)
+      - [`Abort` and `Exception`](#`abort`-and-`exception`)
+      - [`Choice`](#`choice`)
+    - [More on abilities in type signatures](#more-on-abilities-in-type-signatures)
+      - [Pure functions vs inferred abilities](#pure-functions-vs-inferred-abilities)
+      - [Ability lists can appear before each function argument](#ability-lists-can-appear-before-each-function-argument)
+      - [Ability inference and generalization](#ability-inference-and-generalization)
+        - [Higher-order functions and ability polymorphism](#higher-order-functions-and-ability-polymorphism)
+      - [Abilities are only relevant in computation signatures](#abilities-are-only-relevant-in-computation-signatures)
+      - [Ability subtyping](#ability-subtyping)
+      - [Defining functions with different ability lists on different arguments](#defining-functions-with-different-ability-lists-on-different-arguments)
+  - [Invoking handlers](#invoking-handlers)
+    - [Our first `handle` expression](#our-first-`handle`-expression)
+    - [Trying out a test handler](#trying-out-a-test-handler)
+    - [Stacking handlers](#stacking-handlers)
+  - [Writing handlers](#writing-handlers)
+    - [Example handlers](#example-handlers)
+      - [Feeding in information via a pure handler](#feeding-in-information-via-a-pure-handler)
+      - [Handling `Log`](#handling-`log`)
+      - [Handling `Store`](#handling-`store`)
+      - [Handling `Abort`](#handling-`abort`)
+      - [Handling `Choice`](#handling-`choice`)
+    - [The proxy handler pattern](#the-proxy-handler-pattern)
+  - [Conclusion](#conclusion)
+      - [What next?](#what-next)
+  - [Exercises](#exercises)
 
 ## Motivation
 
@@ -35,17 +73,17 @@ So, in this example, it's important to know whether `g` is effectful.  In Unison
 
 ### Decoupling interface from implementation
 
-An 'ability declaration' presents an abstract interface representing the effectful primitives we'd like access to.  For example, the declaration of a `Network` ability might include `sendPacket` or `addPortListener`.  These **requests** are *not* bound directly to a specific implementation - they don't just directly call into the OS's sockets API.  Instead, we do that binding later, when we specify a **handler** for the ability.  Any specialization to OS sockets happens within the handler.  That gives us the flexibility to instead use a testing-specific handler, say one that records the packets sent and allows us to verify their contents.  Or we could take our 'live' handler, and put stack it together with another handler that intercepts the packet contents and writes them to a log.  
+An 'ability declaration' presents an abstract interface representing the effectful primitives we'd like access to.  For example, the declaration of a `Network` ability might include `sendPacket` or `addPortListener`.  These **requests** are *not* bound directly to a specific implementation - they don't just directly call into the OS's sockets API.  Instead, we do that binding later, when we specify a **handler** for the ability.  Any specialization to OS sockets happens within the handler.  That gives us the flexibility to instead use a testing-specific handler, say one that records the packets sent and allows us to verify their contents.  Or we could take our 'live' handler, and stack it together with another handler that intercepts the packet contents and writes them to a log.  
 
-Most languages have facilities to allow separation of interface from implementation.  Applying it to effectful APIs turns out to be a powerful way of structuring programs for modularity and testability.   
+Most languages have facilities to allow separation of interface from implementation.  But applying this principle to effectful APIs turns out to be a powerful way of structuring programs for modularity and testability.   
 
 ### Customizable control flow
 
-Ability requests can be handled in such a way that they abort the computation.  This lets us write abilities like `Exception`, that provide the same kind of exception-handling facility as is found in other languages.  An example of other possible variations is an ability that help with back-tracking solution search.  Putting control flow in the hands of programmers opens up plenty of possibilities for powerful library design, for example around concurrency and parallelism, without depending on case-by-case language features.  
+Ability requests can be handled in such a way that they abort the computation.  This lets us write abilities like `Exception`, which provides the same kind of exception-handling facility as is found in other languages.  An example of other possible variations is an ability that helps with back-tracking solution search.  Putting control flow in the hands of programmers opens up plenty of possibilities for powerful library design, for example around concurrency and parallelism, without depending on case-by-case language features.  
 
 ### Recent research
 
-The design of Unison's ability system comes out of recent research in the theory of programming languages - beginning in TODO and culminating in practical systems around TODO.  In programming language terms this counts as cutting edge stuff!  It's only recently that we've learned how to build programming languages that combine the advantages listed above, in a user-friendly fashion.  See the links in the [language reference][langref#abilities-and-ability-handlers] if you're interested in further reading about the theory.  
+The design of Unison's ability system comes out of recent research in the theory of programming languages - beginning in the 2000s.  In programming language terms this counts as cutting edge stuff!  It's only recently that we've learned how to build programming languages that combine the advantages listed above, in a user-friendly fashion.  See the links in the [language reference][langref#abilities-and-ability-handlers] if you're interested in further reading about the theory.  
 
 ## Using abilities
 

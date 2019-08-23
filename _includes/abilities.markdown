@@ -95,9 +95,7 @@ ability SystemTime where
   systemTime : .base.Nat
 ```
 
-It defines one **request**, `systemTime`, which returns the clock reading.  We'll come back to the term 'request' later.  
-
-Let's use this to write some code.
+It defines one **request**, `systemTime`, which returns the clock reading.  Let's use this to write some code.
 
 ``` haskell
 tomorrow = '(SystemTime.systemTime + 24 * 60 * 60)
@@ -107,11 +105,7 @@ The only non-obvious thing here is the delay, that is, the use of the `'`.
 
 > 🐘 Remember that while `42` is a `Nat`, `'42` is a `() -> Nat` - that is, a function which takes an argument of the unit type, and returns a `Nat`.  See [delayed computations][langref#delayed-computations] for more detail.
 
-We're using the `'` to turn `tomorrow` into a function rather than just a value.  Even though values are in a sense just functions that take zero arguments, as far as abilities are concerned they are different creatures.  Here's the key point: 
-
-👉 Ability requests exist in the context of a function processing one of its arguments.
-
-It's in the process of a function doing some computation that it makes sense to make a request using an ability.  A computed value can't do it - it's just sitting there, with no more computation to do.  
+We're using the `'` to turn `tomorrow` into a function rather than just a regular value.  That's because it's only in the process of a function doing some computation that it makes sense to make a request using an ability.  A value can't do it - it's just sitting there, with no more computation to do.  
 
 So the following wouldn't make sense:
 
@@ -122,11 +116,13 @@ tomorrow = SystemTime.systemTime + 24 * 60 * 60
 
 On the one hand, this code would be saying we just want `tomorrow` to be a computed value, just a `Nat` we've got in the bag.  But on the other it's saying we want to compute it with the help of the system clock.  When do we want that computation to happen - when we first add it to the codebase?  That wouldn't make sense.  
 
-So we need use add the `'` delay, to turn `tomorrow` into function, so we can trigger the computation at the right moment (and with the help of a handler, which we'll come to later). 
+So we need add the `'` delay, to turn `tomorrow` into function, so we can force the computation at the right moment (and with the help of a handler, which we'll come to later). 
 
-> Unison is a 'purely functional' language.  That means that evaluation of terms *cannot* in itself be effectful.  Adding the `'` delay is a consequence of that.  Any effectful code needs to pull its punches - it's not causing effects to happen during evaluation, but rather it's evaluating to a delayed function which can then explain to a handler what effects it would *like* to perform.  We'll see how that handler in turn can only either (a) turn the requested effects into pure computations, ready for evaluation, or (b) pass the buck, by translating them to requests in another ability.  If there are abilities like network or disk I/O, then the buck gets passed all the way to the very outside of the program, and into the Unison runtime system, using the `IO` ability.  
-> 
-> We'll find out more about the '`IO` on the outside' pattern when we meet the [`IO` ability](#io) later.
+Here's the key point to remember: 
+
+👉 Only functions can make requests.
+
+> Unison is a 'purely functional' language.  That means that evaluation of terms *cannot* in itself be effectful.  Having to add the `'` delay to effectfully-computed values is a consequence of that.  Any effectful code needs to pull its punches - it's not causing effects to happen during evaluation, but rather it's evaluating to a function which can then explain to a handler what effects it would *like* to be performed.  We'll see how that handler in turn can only either (a) turn the requested effects into pure computations, ready for evaluation, or (b) pass the buck, by translating them to requests in another ability, yielding another function.  If there are abilities like network or disk I/O, then the buck gets passed all the way to the very outside of the program, and into the Unison runtime system, using the `IO` ability.  At no point does a Unison term's evaluation ever *directly* generate an effect.    
 
 ### Type signatures of functions using abilities
 

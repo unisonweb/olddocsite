@@ -95,7 +95,7 @@ ability SystemTime where
   systemTime : .base.Nat
 ```
 
-It defines one **request**, `systemTime`, which returns the clock reading.  Let's use this to write some code.
+It defines one **request**, `systemTime`, which returns the clock reading.  A request is a function that can be used from code which has this ability _available_ (as described in the next section).  Let's use this request to write some code.
 
 ``` haskell
 tomorrow = '(SystemTime.systemTime + 24 * 60 * 60)
@@ -135,7 +135,7 @@ tomorrow : '{SystemTime} .base.Nat
 
 > 🐞 You may see a `∀` in the signature, due to Unison issue [#689](https://github.com/unisonweb/unison/issues/689).
 
-The `{SystemTime}` is an **ability list** - in this case a list of just one ability.  It's saying that `tomorrow` _requires_ the `SystemTime` ability - that ability needs to be available in functions that call `tomorrow`.  And it's also saying that the `SystemTime` ability is available for use within the definition of `tomorrow` itself.  If a function of type `'.base.Nat` tried to make a `SystemTime.systemTime` request, Unison would reject it with an 'ability check failure': the ability required for that request is not in the set of *ambient abilities* (which is empty in this case).  
+The `{SystemTime}` is an **ability list** - in this case a list of just one ability.  It's saying that `tomorrow` _requires_ the `SystemTime` ability - that ability needs to be _available_ in functions that call `tomorrow`.  And it's also saying that the `SystemTime` ability is available for use within the definition of `tomorrow` itself.  If a function of type `'.base.Nat` tried to make a `SystemTime.systemTime` request, Unison would reject it with an 'ability check failure': the ability required for that request is not in the set of *ambient abilities* (which is empty in this case).  
 
 Suppose you're writing a function `foo` which should call `tomorrow`.  There are two ways of making the `SystemTime` ability available:
 1. Put an ability list containing `SystemTime` in the signature of `foo`, the same as with the signature of `tomorrow`.  Indeed, if you leave the signature of `foo` unspecified, this ability list will be inferred again.  In this way the `SystemTime` requirement propagates up the function call graph.  

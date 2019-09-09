@@ -18,7 +18,18 @@ If you have any trouble with the process, or have ideas about how to improve thi
 
 Note: This alpha release is for Mac OS X and 64-bit Linux only. Windows users, there will be a Unison release for you some day soon.
 
-#### Option 1: Using Homebrew
+#### Option 1: Using Nix (OSX & linux)
+
+First [install nix]: https://nixos.org/nix/manual/#ch-installing-binary if you haven't already.
+
+Then, from the command line, enter or paste this command:
+```
+nix-env -i unison-ucm
+```
+
+This will install the Unison codebase manager executable `ucm`.  As new versions are released and the package is updated, repeating the above command will update the install.
+
+#### Option 2: Using Homebrew
 
 First [install homebrew][homebrew] if you haven't already.
 
@@ -33,7 +44,7 @@ This will install the Unison codebase manager executable `ucm`. If you're upgrad
 
 Note: if you get prompted for a GitHub username and password at this point, make sure you spelled `unisonweb/unison` correctly.
 
-#### Option 2: Install manually
+#### Option 3: Install manually
 
 Download the Unison tarball for [Mac][mac-dl] or [Linux][linux-dl], decompress the tarball to find the delicious `ucm` binary inside, and then optionally copy or link `ucm` somewhere on your path.
 
